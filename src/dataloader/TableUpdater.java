@@ -27,9 +27,9 @@ public class TableUpdater {
     }
 
     protected Connection getDBConnection() throws ClassNotFoundException, SQLException {
-        String url = "jdbc:postgresql://localhost:5432/waltz_clone";
-        String user = "postgres";
-        String password = "1123";
+        String url = "Database URL Here";
+        String user = "Username";
+        String password = "password";
         Class.forName("org.postgresql.Driver");
         Connection conn = DriverManager.getConnection(url, user, password);
         return conn;
