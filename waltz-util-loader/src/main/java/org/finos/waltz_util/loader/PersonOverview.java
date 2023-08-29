@@ -17,7 +17,7 @@ public abstract class PersonOverview {
 
     public abstract String employee_id();
 
-    @JsonProperty("display_name")
+    @JsonProperty("name")
     public abstract String displayName();
     public abstract String email();
 
@@ -44,11 +44,9 @@ public abstract class PersonOverview {
     public abstract Optional<String> officePhone();
 
     @JsonProperty("organisational_unit_id")
-    public abstract Optional<String> organisationalUnitExternalId();
+    public abstract String organisationalUnitExternalId();
     public abstract Optional<Long> organisationalUnitId();
 
-    @JsonProperty("is_removed")
-    public abstract Boolean isRemoved();
 
 
 
