@@ -1,6 +1,7 @@
 [
   {
     "name": "Johnny",
+    "employee_id" : "EMP-001",
     "email": "johnny2@test.com",
     "kind" : "EMPLOYEE",
     "title" : "VP",
@@ -8,5 +9,19 @@
     "office_phone" : "123-456-7890",
     "mobile_phone" : "123-456-7890",
     "organisational_unit_id" : "ORG-001"
+  },
+  {
+    "name": "James",
+    "employee_id" : "EMP-002",
+    "email": "james@test.com",
+    "kind" : "EMPLOYEE",
+    "title" : "EVP",
+    "manager_email" : "grace.miller@wealthybank.com",
+    "office_phone" : "123-456-7890",
+    "mobile_phone" : "123-456-7890",
+    "organisational_unit_id" : "ORG-001"
   }
+
+
+
 ]
