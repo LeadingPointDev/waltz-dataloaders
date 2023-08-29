@@ -45,7 +45,7 @@
                             <archive>
                                 <manifest>
                                     <mainClass>
-                                        org.finos.waltz_util.loader.Hello
+                                        org.finos.waltz_util.loader.Main
                                     </mainClass>
                                 </manifest>
                             </archive>

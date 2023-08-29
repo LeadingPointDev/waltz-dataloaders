@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Johnny",
+    "email": "johnny2@test.com",
+    "kind" : "EMPLOYEE",
+    "title" : "VP",
+    "manager_email" : "james@test.com",
+    "office_phone" : "123-456-7890",
+    "mobile_phone" : "123-456-7890",
+    "organisational_unit_id" : "ORG-001"
+  }
+]

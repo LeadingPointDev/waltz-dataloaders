@@ -2,6 +2,7 @@ package org.finos.waltz_util.loader;
 
 import org.finos.waltz_util.common.DIBaseConfiguration;
 import org.finos.waltz_util.common.helper.DiffResult;
+import org.finos.waltz_util.common.helper.LoggingUtilities;
 import org.finos.waltz_util.common.model.ApplicationKind;
 import org.finos.waltz_util.common.model.Criticality;
 import org.finos.waltz_util.schema.tables.records.ApplicationRecord;
@@ -13,8 +14,6 @@ import org.jooq.SelectOnConditionStep;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -30,13 +29,29 @@ import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
 import static org.finos.waltz_util.schema.Tables.APPLICATION;
 import static org.finos.waltz_util.schema.Tables.ORGANISATIONAL_UNIT;
 
-public class Hello {
+public class Main {
 
 
     public static final long ORPHAN_ORG_UNIT_ID = 150L;
 
 
     public static void main(String[] args) throws IOException {
+
+        PersonLoader PL = new PersonLoader("person.json");
+        PL.update();
+
+        if (true) {
+            throw new IOException("NO FURTHER!");
+        }
+
+        LoggingUtilities.configureLogging();
+        OrganisationLoader OL = new OrganisationLoader("orgs.json");
+        OL.update();
+
+
+        if (true){
+            throw new IOException("NO FURTHER!");
+        }
         System.out.println("Hello, World!");
 
         AnnotationConfigApplicationContext springContext = new AnnotationConfigApplicationContext(DIBaseConfiguration.class);
@@ -83,7 +98,7 @@ public class Hello {
 
         dsl.transaction(ctx -> {
             DSLContext tx = ctx.dsl();
-
+            // map for org unit external id to org unit id
             Map<String, Long> orgUnitIdsByOrgUnitExtId = tx
                     .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
                     .from(ORGANISATIONAL_UNIT)
@@ -109,11 +124,11 @@ public class Hello {
 
             System.out.println(existingApps);
 
-            byte[] bytes = Files.readAllBytes(Path.of("waltz-util-loader", "src", "main", "resources","apps.json"));
+//            byte[] bytes = Files.readAllBytes(Path.of("waltz-util-loader", "src", "main", "resources","apps.json"));
 
-            System.out.println(bytes.length);
+//            System.out.println(bytes.length);
 
-            ApplicationOverview[] rawOverviews = getJsonMapper().readValue(bytes, ApplicationOverview[].class);
+            ApplicationOverview[] rawOverviews = getJsonMapper().readValue(Main.class.getClassLoader().getResourceAsStream("apps.json"), ApplicationOverview[].class);
             Set<ApplicationOverview> desiredApps = Stream
                     .of(rawOverviews)
                     .map(d -> ImmutableApplicationOverview
@@ -144,7 +159,11 @@ public class Hello {
 
             List<ApplicationRecord> recordsToInsert = toInsert
                     .stream()
-                    .map(a -> toJooqRecord(tx, a))
+                    .map(a -> {
+                        ApplicationRecord r = toJooqRecord(tx, a);
+                        r.changed(APPLICATION.ID, false);
+                        return r;
+                    })
                     .collect(Collectors.toList());
 
             List<ApplicationRecord> recordsToUpdate = toUpdate
@@ -166,16 +185,16 @@ public class Hello {
                     .batchInsert(recordsToInsert)
                     .execute());
 
-            System.out.println(recordsToUpdate);
+            //System.out.println(recordsToUpdate);
 
-            System.out.println("++++" + appIdsByAppExtId.get("APP-002"));
+            //System.out.println("++++" + appIdsByAppExtId.get("APP-002"));
 
             int recordsUpdated = summarizeResults(tx
                     .batchUpdate(recordsToUpdate)
                     .execute());
 
             System.out.printf("Removed: %d, Created: %d, Updated: %d%n", numRemoved, recordsCreated, recordsUpdated);
-//            throw new RuntimeException("BooooM!");
+            throw new RuntimeException("BooooM!");
         });
 
     }
