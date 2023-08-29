@@ -31,24 +31,162 @@ import static org.finos.waltz_util.schema.Tables.APPLICATION;
 import static org.finos.waltz_util.schema.Tables.ORGANISATIONAL_UNIT;
 public class ApplicationLoader {
     public static final long ORPHAN_ORG_UNIT_ID = 150L;
+    String resource;
+    DSLContext dsl;
 
 
-    public static void main(String[] args) throws IOException {
-        System.out.println("Hello, World!");
+    public ApplicationLoader(String resource) {
+
+        this.resource = resource;
         AnnotationConfigApplicationContext springContext = new AnnotationConfigApplicationContext(DIBaseConfiguration.class);
 
-        DSLContext dsl = springContext.getBean(DSLContext.class);
+        dsl = springContext.getBean(DSLContext.class);
 
-        Result<Record5<String, Long, String, String, String>> result = dsl
-                .select(APPLICATION.NAME,
-                        APPLICATION.ID,
-                        APPLICATION.ASSET_CODE,
-                        ORGANISATIONAL_UNIT.NAME,
-                        ORGANISATIONAL_UNIT.EXTERNAL_ID)
-                .from(APPLICATION)
-                .innerJoin(ORGANISATIONAL_UNIT)
-                .on(ORGANISATIONAL_UNIT.ID.eq(APPLICATION.ORGANISATIONAL_UNIT_ID))
-                .fetch();
-        System.out.println(result);
+
+    }
+
+
+    public void update(){
+
+
+        dsl.transaction(ctx -> {
+            DSLContext tx = ctx.dsl();
+            // map for org unit external id to org unit id
+            Map<String, Long> orgUnitIdsByOrgUnitExtId = tx
+                    .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
+                    .from(ORGANISATIONAL_UNIT)
+                    .fetchMap(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID);
+
+            Map<String, Long> appIdsByAppExtId = tx
+                    .select(APPLICATION.ASSET_CODE, APPLICATION.ID)
+                    .from(APPLICATION)
+                    .fetchMap(APPLICATION.ASSET_CODE, APPLICATION.ID);
+
+            SelectOnConditionStep<Record> qry = tx
+                    .select(APPLICATION.fields())
+                    .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
+                    .from(APPLICATION)
+                    .innerJoin(ORGANISATIONAL_UNIT)
+                    .on(ORGANISATIONAL_UNIT.ID.eq(APPLICATION.ORGANISATIONAL_UNIT_ID));
+
+            Set<ApplicationOverview> existingApps = qry
+                    .fetch()
+                    .stream()
+                    .map(r -> toDomain(r))
+                    .collect(Collectors.toSet());
+
+            System.out.println(existingApps);
+
+//            byte[] bytes = Files.readAllBytes(Path.of("waltz-util-loader", "src", "main", "resources","apps.json"));
+
+//            System.out.println(bytes.length);
+
+            ApplicationOverview[] rawOverviews = getJsonMapper().readValue(Main.class.getClassLoader().getResourceAsStream("apps.json"), ApplicationOverview[].class);
+            Set<ApplicationOverview> desiredApps = Stream
+                    .of(rawOverviews)
+                    .map(d -> ImmutableApplicationOverview
+                            .copyOf(d)
+                            .withId(Optional.ofNullable(appIdsByAppExtId.get(d.externalId())))
+                            .withOrgUnitId(orgUnitIdsByOrgUnitExtId.getOrDefault(
+                                    d.organisationalUnitExternalId(),
+                                    ORPHAN_ORG_UNIT_ID)))
+                    .collect(Collectors.toSet());
+
+            DiffResult<ApplicationOverview> diff = DiffResult.mkDiff(
+                    existingApps,
+                    desiredApps,
+                    ApplicationOverview::externalId,
+                    Object::equals);
+
+            System.out.println(diff);
+
+            Collection<ApplicationOverview> toRemove = diff.waltzOnly();
+            Collection<ApplicationOverview> toInsert = diff.otherOnly();
+            Collection<ApplicationOverview> toUpdate = diff.differingIntersection();
+
+
+            Set<String> assetCodesToRemove = toRemove
+                    .stream()
+                    .map(ApplicationOverview::externalId)
+                    .collect(Collectors.toSet());
+
+            List<ApplicationRecord> recordsToInsert = toInsert
+                    .stream()
+                    .map(a -> {
+                        ApplicationRecord r = toJooqRecord(tx, a);
+                        r.changed(APPLICATION.ID, false);
+                        return r;
+                    })
+                    .collect(Collectors.toList());
+
+            List<ApplicationRecord> recordsToUpdate = toUpdate
+                    .stream()
+                    .map(a -> {
+                        ApplicationRecord r = toJooqRecord(tx, a);
+                        r.changed(APPLICATION.ID, false);
+                        return r;
+                    })
+                    .collect(Collectors.toList());
+
+            int numRemoved = 0; // tx
+//                    .update(APPLICATION)
+//                    .set(APPLICATION.IS_REMOVED, true)
+//                    .where(APPLICATION.ASSET_CODE.in(assetCodesToRemove))
+//                    .execute();
+
+            int recordsCreated = summarizeResults(tx
+                    .batchInsert(recordsToInsert)
+                    .execute());
+
+            //System.out.println(recordsToUpdate);
+
+            //System.out.println("++++" + appIdsByAppExtId.get("APP-002"));
+
+            int recordsUpdated = summarizeResults(tx
+                    .batchUpdate(recordsToUpdate)
+                    .execute());
+
+            System.out.printf("Removed: %d, Created: %d, Updated: %d%n", numRemoved, recordsCreated, recordsUpdated);
+            // TODO: Fix ID comparison updating tables with no effect
+        });
+    }
+
+
+
+    private static ImmutableApplicationOverview toDomain(Record r) {
+        ApplicationRecord appRecord = r.into(APPLICATION);
+        return ImmutableApplicationOverview
+                .builder()
+                .externalId(appRecord.getAssetCode())
+                .name(appRecord.getName())
+                .organisationalUnitExternalId(r.get(ORGANISATIONAL_UNIT.EXTERNAL_ID))
+                .orgUnitId(appRecord.getOrganisationalUnitId())
+                .description(Optional.ofNullable(appRecord.getDescription()))
+                .kind(ApplicationKind.valueOf(appRecord.getKind()))
+                .provenance(appRecord.getProvenance())
+                .lifecyclePhase(appRecord.getLifecyclePhase())
+                .criticality(Criticality.valueOf(appRecord.getBusinessCriticality()))
+                .build();
+    }
+
+
+    private static ApplicationRecord toJooqRecord(DSLContext dsl, ApplicationOverview domain) {
+        ApplicationRecord appRecord = dsl.newRecord(APPLICATION);
+        appRecord.setId(domain.id().orElse(null));
+        appRecord.setAssetCode(domain.externalId());
+        appRecord.setName(domain.name());
+        appRecord.setKind(domain.kind().name());
+        appRecord.setDescription(domain.description().orElse(null));
+        appRecord.setProvenance(domain.provenance());
+        appRecord.setOrganisationalUnitId(domain.orgUnitId().orElseThrow(() -> new IllegalArgumentException("No org unit id")));
+        appRecord.setBusinessCriticality(domain.criticality().name());
+        appRecord.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
+
+        return appRecord;
+    }
+
+
+    public static int summarizeResults(int[] rcs) {
+        return IntStream.of(rcs).sum();
     }
 }
