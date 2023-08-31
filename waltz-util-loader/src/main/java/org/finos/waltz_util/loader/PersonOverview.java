@@ -1,51 +1,61 @@
 package org.finos.waltz_util.loader;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.finos.waltz_util.common.model.PersonKind;
 import org.immutables.value.Value;
 
-import java.math.BigInteger;
 import java.util.Optional;
-import java.util.Random;
 
 
 @Value.Immutable
 @JsonSerialize(as = ImmutablePersonOverview.class)
 @JsonDeserialize(as = ImmutablePersonOverview.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class PersonOverview {
-
-    public abstract String employee_id();
+    @Value.Auxiliary
+    public abstract Optional<Long> id();
+    @JsonProperty("resourceId")
+    public abstract String employeeId(); // fixed name, java tends to avoid underscores in class names and method names
 
     @JsonProperty("name")
     public abstract String displayName();
+
     public abstract String email();
 
 
-    @JsonProperty("user_principal_name")
+    @JsonProperty("username")
     public abstract Optional<String> userPrincipalName();
 
-    @JsonProperty("department_name")
+    @JsonProperty("departmentName")
     public abstract Optional<String> departmentName();
 
-    @JsonProperty("kind")
+    @JsonProperty("personKind")
     public abstract String kind();
 
+    @Value.Auxiliary
     @JsonProperty("manager_email")
     public abstract Optional<String> managerEmail();
+
+    @JsonProperty("managerResourceId")
     public abstract Optional<String> managerEmployeeId();
 
+    @JsonProperty("title")
     public abstract Optional<String> title();
 
-    @JsonProperty("mobile_phone")
+    @JsonProperty("mobilePhone")
     public abstract Optional<String> mobilePhone();
 
-    @JsonProperty("office_phone")
+    @JsonProperty("officePhone")
     public abstract Optional<String> officePhone();
 
-    @JsonProperty("organisational_unit_id")
+    @JsonProperty("departmentId")
     public abstract String organisationalUnitExternalId();
+
     public abstract Optional<Long> organisationalUnitId();
+
+
 
 
 

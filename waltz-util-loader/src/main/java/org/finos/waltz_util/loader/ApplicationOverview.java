@@ -1,5 +1,6 @@
 package org.finos.waltz_util.loader;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -7,50 +8,81 @@ import org.finos.waltz_util.common.model.ApplicationKind;
 import org.finos.waltz_util.common.model.Criticality;
 import org.immutables.value.Value;
 
+import java.sql.Timestamp;
 import java.util.Optional;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableApplicationOverview.class)
 @JsonDeserialize(as = ImmutableApplicationOverview.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class ApplicationOverview {
 
-    @JsonProperty("external_id")
+
+    public abstract String name();
+    public abstract Optional<String> description();
+    @JsonProperty("assetCode")
     public abstract String externalId();
 
+    @JsonProperty("parentAssetCode")
+    public abstract Optional<String> parentExternalId();
+
+    @JsonProperty("organisationalUnitId")
+    public abstract String organisationalUnitExternalId();
+
+    @JsonProperty("applicationKind")
     @Value.Default
     public ApplicationKind kind() {
         return ApplicationKind.IN_HOUSE;
     }
 
-    public abstract String name();
+    @Value.Default
+    @JsonProperty("lifecyclePhase")
+    public String lifecyclePhase() {
+        return "ACTIVE";
+
+    }
+
+    @Value.Default
+    public String overallRating(){
+        return "Z";
+    }
+
+
+    @JsonProperty("businessCriticality")
+    @Value.Default
+    public Criticality criticality() {
+        return Criticality.MEDIUM;
+    }
+
+    @Value.Default
+    public String entityLifecycleStatus() {
+        return "ACTIVE";
+    }
+
+    public abstract Optional<Timestamp> plannedRetirementDate();
+    public abstract Optional<Timestamp> actualRetirementDate();
+    public abstract Optional<Timestamp> commissionDate();
+
+    public abstract Boolean isRemoved();
+
 
     @Value.Default
     public String provenance() {
         return "waltz-loader";
     }
 
-    public abstract Optional<String> description();
-
-    @Value.Default
-    @JsonProperty("lifecycle_phase")
-    public String lifecyclePhase() {
-        return "ACTIVE";
-
-    }
 
 
-    @JsonProperty("organisational_unit_id")
-    public abstract String organisationalUnitExternalId();
 
 
-    @Value.Default
-    public Criticality criticality() {
-        return Criticality.MEDIUM;
-    }
+
+
+
+
+
 
     @Value.Auxiliary
     public abstract Optional<Long> id();
-
 
     public abstract Optional<Long> orgUnitId();
 

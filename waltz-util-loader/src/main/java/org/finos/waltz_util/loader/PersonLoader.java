@@ -2,32 +2,20 @@ package org.finos.waltz_util.loader;
 
 import org.finos.waltz_util.common.DIBaseConfiguration;
 import org.finos.waltz_util.common.helper.DiffResult;
-import org.finos.waltz_util.common.helper.LoggingUtilities;
-import org.finos.waltz_util.common.model.ApplicationKind;
-import org.finos.waltz_util.common.model.Criticality;
-import org.finos.waltz_util.schema.tables.Person;
-import org.finos.waltz_util.schema.tables.records.ApplicationRecord;
 import org.finos.waltz_util.schema.tables.records.PersonRecord;
-import org.jooq.*;
+import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.io.IOException;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.io.InputStream;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
-import static org.finos.waltz_util.schema.Tables.APPLICATION;
 import static org.finos.waltz_util.schema.Tables.ORGANISATIONAL_UNIT;
-
 import static org.finos.waltz_util.schema.Tables.PERSON;
 
 
@@ -40,43 +28,29 @@ public class PersonLoader {
      *
      */
 
-    String resource;
-    Long ORPHAN_ORG_UNIT_ID = 150L;
-    DSLContext dsl;
+    private final static Long ORPHAN_ORG_UNIT_ID = 150L; // this is a constant, so should be declared as static and uppercased
+    private final String resource;  // these are initialised at construction, and should not change therefore marked as final
+    private final DSLContext dsl;
 
     public PersonLoader(String resource){
         this.resource = resource;
-
         AnnotationConfigApplicationContext springContext = new AnnotationConfigApplicationContext(DIBaseConfiguration.class);
-
         dsl = springContext.getBean(DSLContext.class);
     }
 
-    public void update(){
-        InsertNew();
-        updateRelationships();
-    }
 
-    private void InsertNew(){
-        /**
-         * 1. Get Current People from DB
-         * 2. Get New people from JSON
-         * 3. Compare emails (unique employee id if possible) todo: check for UUIDs with thushan
-         * 4. insert new entries where no email match
-         *
-         */
 
-        dsl.transaction(ctx ->{
+    // clearer method name
+    public void synch(){
+
+        // updates and insertions should be under a single tx
+        dsl.transaction(ctx -> {
             DSLContext tx = ctx.dsl();
 
-            Map<String, Long> OrgIdByOrgExtId = tx
-                    .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
-                    .from(ORGANISATIONAL_UNIT)
-                    .fetchMap(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID);
 
 
-
-
+            // pulled out the common code into this method
+            Map<String, Long> orgIdByOrgExtId = loadOrgIdByExtIdMap(tx);
 
             Set<PersonOverview> existingPeople = tx
                     .select(PERSON.fields())
@@ -89,193 +63,242 @@ public class PersonLoader {
                     .map(r -> toDomain(r))
                     .collect(Collectors.toSet());
 
-            PersonOverview[] rawOverviews = getJsonMapper().readValue(Main.class.getClassLoader().getResourceAsStream("person.json"), PersonOverview[].class);
-            Set<PersonOverview> desiredPeople = Stream
-                    .of(rawOverviews)
-                            .map(d -> ImmutablePersonOverview
-                                    .copyOf(d)
-                                    .withOrganisationalUnitId(OrgIdByOrgExtId.getOrDefault(d.organisationalUnitExternalId().toString(), ORPHAN_ORG_UNIT_ID)))
-
-
-                                    .collect(Collectors.toSet());
+            Map<String, String> emailtoEmployeeID = EmailToEmployeeId();
+            emailtoEmployeeID.putAll(mkEmailToEmployeeIdMap(existingPeople));
 
 
 
+
+            Set<PersonOverview> desiredPeople = loadPeopleFromFile(orgIdByOrgExtId,
+                                                                   emailtoEmployeeID);
+            //
+            // take desiredPeople, and if their Employee ID matches, set thier ID to the map
+            Map<String, Long> employeeIDtoID = EmployeeIDtoID(tx);
+            desiredPeople = desiredPeople
+                    .stream()
+                    .map(p -> {
+                        Long id = employeeIDtoID.get(p.employeeId());
+                        return ImmutablePersonOverview.copyOf(p)
+                                .withId(Optional.ofNullable(id))
+                                .withManagerEmployeeId(p.managerEmployeeId().orElse("0"));
+                    })
+                    .collect(Collectors.toSet());
+
+
+
+
+            // only need to do the diff once
             DiffResult<PersonOverview> diff = DiffResult.mkDiff(
                     existingPeople,
                     desiredPeople,
-                    PersonOverview::employee_id,
+                    PersonOverview::employeeId,
                     Object::equals);
 
-            Collection<PersonOverview> toInsert = diff.otherOnly();
 
-            List<PersonRecord> recordsToInsert = toInsert
-                    .stream()
-                    .map(p -> {
-                        PersonRecord record = toJooqRecord(tx, p);
-                        record.changed(PERSON.ID, false);
-                        return record;})
-                    .collect(Collectors.toList());
+            // then use the bits of the diff for the appropriate 'handler' methods
+            insertNew(tx, diff.otherOnly());
+            updateRelationships(tx, diff.differingIntersection());
+            markRemoved(tx, diff.waltzOnly());
 
-            int recordsCreated = summarizeResults(tx
-                    .batchInsert(recordsToInsert)
-                    .execute());
 
-            System.out.println("Records Created: " + recordsCreated);
-            if (recordsCreated != 0){
-                System.out.println("Records Created: " + recordsCreated);
-            }
         });
-
-
-
     }
 
-    private void updateRelationships(){
+
+    private void insertNew(DSLContext tx, Collection<PersonOverview> toInsert) throws IOException {
+
+
+
+        /*
+         * 1. Get Current People from DB
+         * 2. Get New people from JSON
+         * 3. Compare emails (unique employee id if possible) todo: check for UUIDs
+         * 4. insert new entries where no email match
+         */
+
+        List<PersonRecord> recordsToInsert = toInsert
+                .stream()
+                .map(p -> {
+                    PersonRecord record = toJooqRecord(tx, p);
+                    record.changed(PERSON.ID, false);
+                    return record;})
+                .collect(Collectors.toList());
+
+
+
+
+
+        int recordsCreated = summarizeResults(tx
+                .batchInsert(recordsToInsert)
+                .execute());
+
+        System.out.printf("Created: %d records\n", recordsCreated);
+    }
+
+
+    private void updateRelationships(DSLContext tx,
+                                     Collection<PersonOverview> toUpdate) {
         /**
          * for all entries, compare with JSON
          * todo finish this bit
          */
 
-        dsl.transaction(ctx -> {
-            DSLContext tx = ctx.dsl();
-            /**
-             * 1. get email -> manager ID relationships from DB
-             * 2. load new people from DB to create Existing PersonOverviews
-             * 3. load new people from JSON to create Desired PersonOverviews
-             * 4. compare the two sets of PersonOverviews
-             * 5. update IntersectingDifferent entries
-             * 6. set is_removed for rest
-             */
+        /**
+         * 1. get email -> manager ID relationships from DB
+         * 2. load new people from DB to create Existing PersonOverviews
+         * 3. load new people from JSON to create Desired PersonOverviews
+         * 4. compare the two sets of PersonOverviews
+         * 5. update IntersectingDifferent entries
+         * 6. set is_removed for rest
+         */
 
-            Map<String, Long> OrgIdByOrgExtId = tx
-                    .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
-                    .from(ORGANISATIONAL_UNIT)
-                    .fetchMap(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID);
+        List<PersonRecord> recordsToUpdate = toUpdate
+                .stream()
+                .map(p -> {
+                    PersonRecord record = toJooqRecord(tx, p);
 
-
-            Map<String, String> emailToEmployeeID = tx
-                    .select(PERSON.EMAIL, PERSON.EMPLOYEE_ID)
-                    .from(PERSON)
-                    .fetchMap(PERSON.EMAIL, PERSON.EMPLOYEE_ID);
-
-
-            Set<PersonOverview> existingPeople = tx
-                    .select(PERSON.fields())
-                    .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
-                    .from(PERSON)
-                    .innerJoin(ORGANISATIONAL_UNIT)
-                    .on(ORGANISATIONAL_UNIT.ID.eq(PERSON.ORGANISATIONAL_UNIT_ID))
-                    .fetch()
-                    .stream()
-                    .map(r -> toDomain(r))
-                    .collect(Collectors.toSet());
-
-            PersonOverview[] rawOverviews = getJsonMapper().readValue(Main.class.getClassLoader().getResourceAsStream("person.json"), PersonOverview[].class);
-            Set<PersonOverview> desiredPeople = Stream
-                    .of(rawOverviews)
-                    .map(d -> {
-                                //???
-                                ImmutablePersonOverview personOverview = ImmutablePersonOverview.copyOf(d)
-                                        .withOrganisationalUnitId(OrgIdByOrgExtId.getOrDefault(d.organisationalUnitExternalId().toString(), ORPHAN_ORG_UNIT_ID))
-                                        .withManagerEmployeeId(emailToEmployeeID.getOrDefault(d.managerEmail().get(), "0"));
-
-
-                                return personOverview;
-                            }
-                    ).collect(Collectors.toSet());
-
-            DiffResult<PersonOverview> diff = DiffResult.mkDiff(
-                    existingPeople,
-                    desiredPeople,
-                    PersonOverview::employee_id,
-                    Object::equals);
-
-
-            System.out.println("Diff: " + diff);
-            Collection<PersonOverview> toUpdate = diff.differingIntersection();
-
-
-            List<PersonRecord> recordsToUpdate = toUpdate
-                    .stream()
-                    .map(p -> {
-                        PersonRecord record = toJooqRecord(tx, p);
-                        record.changed(PERSON.ID, false);
-                        return record;
-                    })
-                   .collect(Collectors.toList());
-
-            int recordsUpdated;
-            recordsUpdated = summarizeResults(tx
-                    .batchUpdate(recordsToUpdate)
-                    .execute());
-
-            throw new IOException("test");
+                    record.changed(PERSON.ID, false);
+                    return record;
+                })
+               .collect(Collectors.toList());
 
 
 
 
-        });
+
+
+        int recordsUpdated = summarizeResults(tx   // no point splitting decl and assignment
+                .batchUpdate(recordsToUpdate)
+                .execute());
+
+        System.out.printf("Updated: %d records\n", recordsUpdated);
 
     }
 
+    private void markRemoved(DSLContext tx,
+                             Collection<PersonOverview> toRemove) {
+        Set<Long> toRemoveIDs = toRemove.stream()
+                .map(PersonOverview::id)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toSet());
+        int numRemoved = tx
+                .update(PERSON)
+                .set(PERSON.IS_REMOVED, true)
+                .where(PERSON.ID.in(toRemoveIDs))
+                .execute();
+
+        System.out.println("Removed: " + numRemoved + " records");
+
+
+
+
+
+    }
+
+    private Map<String, String> EmailToEmployeeId () throws IOException {
+        InputStream resourceAsStream = PersonLoader.class.getClassLoader().getResourceAsStream(resource);
+        PersonOverview[] rawOverviews = getJsonMapper().readValue(resourceAsStream, PersonOverview[].class);
+        return Stream
+                .of(rawOverviews)
+                .collect(Collectors.toMap(
+                        PersonOverview::email,
+                        PersonOverview::employeeId));
+
+    }
+
+
+    private Map<String, Long> EmployeeIDtoID (DSLContext tx) throws IOException {
+        return tx
+                .select(PERSON.EMPLOYEE_ID, PERSON.ID)
+                .from(PERSON)
+                .fetchMap(PERSON.EMPLOYEE_ID, PERSON.ID);
+    }
+
+
+    private Set<PersonOverview> loadPeopleFromFile(Map<String, Long> orgIdByOrgExtId,
+                                                   Map<String, String> emailToEmployeeID) throws IOException {
+        InputStream resourceAsStream = PersonLoader.class.getClassLoader().getResourceAsStream(resource);
+        PersonOverview[] rawOverviews = getJsonMapper().readValue(resourceAsStream, PersonOverview[].class);
+        return Stream
+                .of(rawOverviews)
+                .map(d -> ImmutablePersonOverview
+                        .copyOf(d)
+                        .withOrganisationalUnitId(orgIdByOrgExtId.getOrDefault(d.organisationalUnitExternalId().toString(), ORPHAN_ORG_UNIT_ID))
+                        // this bit is better written the other way around as d.managerEmail may be undefined:
+                        // withManagerEmployeeId(emailToEmployeeID.getOrDefault(d.managerEmail().get(), "0")))
+                        .withManagerEmployeeId(d.managerEmployeeId())
+                        .withEmail(d.email()))
+                .collect(Collectors.toSet());
+    }
 
 
     private ImmutablePersonOverview toDomain(Record r){
         PersonRecord personRecord = r.into(PERSON);
         return ImmutablePersonOverview
                 .builder()
-
-                .employee_id(
-                        personRecord.getEmployeeId())
-                .email(
-                        personRecord.getEmail())
-                .displayName(
-                        personRecord.getDisplayName())
-                .kind(
-                        personRecord.getKind())
-                .managerEmployeeId(personRecord.getManagerEmployeeId()
-                        )
-                .title(
-                        personRecord.getTitle())
-                .departmentName(
-                        Optional.ofNullable(personRecord.getDepartmentName()))
-                .mobilePhone(
-                        Optional.ofNullable(personRecord.getMobilePhone()))
-                .officePhone(
-                        Optional.ofNullable(personRecord.getOfficePhone()))
-                .organisationalUnitId(
-                        personRecord.getOrganisationalUnitId())
-                .organisationalUnitExternalId(
-                        r.get(ORGANISATIONAL_UNIT.EXTERNAL_ID))
-
-
+                .id(personRecord.getId().longValue())
+                .employeeId(personRecord.getEmployeeId())
+                .email(personRecord.getEmail())
+                .displayName(personRecord.getDisplayName())
+                .kind(personRecord.getKind())
+                .managerEmployeeId(personRecord.getManagerEmployeeId())
+                .title(Optional.ofNullable(personRecord.getTitle()))
+                .departmentName(Optional.ofNullable(personRecord.getDepartmentName()))
+                .mobilePhone(Optional.ofNullable(personRecord.getMobilePhone()))
+                .officePhone(Optional.ofNullable(personRecord.getOfficePhone()))
+                .organisationalUnitId(personRecord.getOrganisationalUnitId())
+                .organisationalUnitExternalId(r.get(ORGANISATIONAL_UNIT.EXTERNAL_ID))
                 .build();
     }
 
+
     private PersonRecord toJooqRecord(DSLContext dsl, PersonOverview domain){
         PersonRecord record = dsl.newRecord(PERSON);
-        record.setEmployeeId(domain.employee_id());
+
+        record.setId(domain.id().orElse(null));
+        record.setEmployeeId(domain.employeeId());
         record.setDisplayName(domain.displayName());
         record.setEmail(domain.email());
         record.setDepartmentName(domain.departmentName().orElse(null));
         record.setKind(domain.kind());
+
         // sets unmanaged people to 0 on every insert statement where its not specified, as it will be updated on second pass.
         record.setManagerEmployeeId(domain.managerEmployeeId().orElse("0"));
         record.setTitle(domain.title().orElse(null));
         record.setMobilePhone(domain.mobilePhone().orElse(null));
         record.setOfficePhone(domain.officePhone().orElse(null));
-        record.setOrganisationalUnitId(domain.organisationalUnitId().orElse(null));
+        record.setOrganisationalUnitId(domain.organisationalUnitId().orElse(ORPHAN_ORG_UNIT_ID));
+        record.setIsRemoved(false);// we only build records for new and updated people, which means they aren't removed
         return record;
 
     }
 
-    public static int summarizeResults(int[] rcs) {
+    private static int summarizeResults(int[] rcs) {
         return IntStream.of(rcs).sum();
     }
 
 
+    private Map<String, String> mkEmailToEmployeeIdMap(Set<PersonOverview> existingPeople) {
+        return existingPeople
+                .stream()
+                .collect(Collectors.toMap(
+                        PersonOverview::email,
+                        PersonOverview::employeeId));
+    }
 
 
+    private static Map<String, Long> loadOrgIdByExtIdMap(DSLContext tx) {
+        Map<String, Long> orgIdByOrgExtId = tx
+                .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
+                .from(ORGANISATIONAL_UNIT)
+                .fetchMap(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID);
+        return orgIdByOrgExtId;
+    }
+
+
+    public static void main(String[] args) {
+        new PersonLoader("PERSON2.json").synch();
+    }
 
 }
