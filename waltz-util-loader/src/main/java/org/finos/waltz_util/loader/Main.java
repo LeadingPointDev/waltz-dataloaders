@@ -37,12 +37,12 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         ApplicationLoader AL = new ApplicationLoader("apps.json");
-        AL.update();
+        AL.synch();
 
 
 
         PersonLoader PL = new PersonLoader("person.json");
-        PL.update();
+        PL.synch();
 
         if (true) {
             throw new IOException("NO FURTHER!");

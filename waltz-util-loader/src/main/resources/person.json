@@ -16,7 +16,18 @@
     "email": "james@test.com",
     "kind" : "EMPLOYEE",
     "title" : "EVP",
-    "manager_email" : "grace.miller@wealthybank.com",
+    "manager_email" : "bobby@test.com",
+    "office_phone" : "123-456-7890",
+    "mobile_phone" : "123-456-7890",
+    "organisational_unit_id" : "ORG-001"
+  },
+  {
+    "name" : "Boss Bobby",
+    "employee_id" : "EMP-003",
+    "email" : "bobby@test.com",
+    "kind" : "EMPLOYEE",
+    "title" : "EVP",
+    "manager_email" : "bobby@newemail",
     "office_phone" : "123-456-7890",
     "mobile_phone" : "123-456-7890",
     "organisational_unit_id" : "ORG-001"
