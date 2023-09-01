@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 
 import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
 import static org.finos.waltz_util.schema.Tables.DATA_TYPE;
+
 public class DataTypeLoader {
 
     private final String resource;  // these are initialised at construction, and should not change therefore marked as final
@@ -116,6 +117,7 @@ public class DataTypeLoader {
     private void markDepreciated(DSLContext dsl, Collection<DataTypeOverview> toInsert){
         Set<Long> idsToRemove = toInsert
                 .stream()
+                .filter(overview -> !overview.depreciated())
                 .map(DataTypeOverview::id)
                 .collect(Collectors.toSet());
 
@@ -126,7 +128,7 @@ public class DataTypeLoader {
                 .where(DATA_TYPE.ID.in(idsToRemove))
                 .execute();
 
-        System.out.println("Successfully Depreciated: " + markedRemoved);
+        System.out.println("Depreciated New: " + markedRemoved);
     }
 
 
