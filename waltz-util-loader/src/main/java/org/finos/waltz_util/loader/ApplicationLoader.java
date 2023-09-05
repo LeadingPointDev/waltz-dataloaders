@@ -9,6 +9,7 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Timestamp;
@@ -35,7 +36,7 @@ public class ApplicationLoader {
     }
 
 
-    public void synch(){
+    public void synch() {
         dsl.transaction(ctx -> {
             DSLContext tx = ctx.dsl();
             Map<String, Long> externalIdtoId = getExternalIdToIdMap(tx);
@@ -50,19 +51,11 @@ public class ApplicationLoader {
                                         .withId(id);
 
                             }
-
-
-
                     )
                     .collect(Collectors.toSet());
 
 
-
-
             Set<ApplicationOverview> existingApps = getExistingPeople(tx);
-
-
-
 
 
             // json includes
@@ -72,11 +65,6 @@ public class ApplicationLoader {
                     desiredApps,
                     ApplicationOverview::externalId,
                     Object::equals);
-
-            System.out.println("To Insert: " + diff.otherOnly().size());
-            System.out.println("To Update: " + diff.differingIntersection().size());
-            System.out.println("To Remove: " + diff.waltzOnly().size());
-
 
 
             insertNew(tx, diff.otherOnly());
@@ -88,17 +76,19 @@ public class ApplicationLoader {
     }
 
 
-    private void insertNew(DSLContext tx, Collection<ApplicationOverview> toInsert ){
+    private void insertNew(DSLContext tx, Collection<ApplicationOverview> toInsert) {
         List<ApplicationRecord> recordsToInsert = toInsert
-                    .stream()
-                    .map(a -> {
-                        ApplicationRecord record = toJooqRecord(tx, a);
-                        record.changed(APPLICATION.ID, false);
-                        return record;
+                .stream()
+                .map(a -> {
+                    ApplicationRecord record = toJooqRecord(tx, a);
+                    record.changed(APPLICATION.ID, false);
+                    return record;
 
 
-                    })
-                    .collect(Collectors.toList());
+                })
+                .collect(Collectors.toList());
+
+
         int numInserted = summarizeResults(tx
                 .batchInsert(recordsToInsert)
                 .execute());
@@ -106,10 +96,9 @@ public class ApplicationLoader {
         System.out.println("Records Created: " + numInserted);
 
 
-
     }
 
-    private void updateRelationships(DSLContext tx, Collection<ApplicationOverview> toUpdate ){
+    private void updateRelationships(DSLContext tx, Collection<ApplicationOverview> toUpdate) {
         List<ApplicationRecord> recordsToUpdate = toUpdate
                 .stream()
                 .map(a -> {
@@ -126,11 +115,13 @@ public class ApplicationLoader {
         System.out.println("Records Updated: " + numUpdated);
     }
 
-    private void markRemoved(DSLContext tx, Collection<ApplicationOverview> toRemove ){
+    private void markRemoved(DSLContext tx, Collection<ApplicationOverview> toRemove) {
         Set<String> assetCodesToRemove = toRemove
                 .stream()
+                .filter(a -> !a.isRemoved())
                 .map(ApplicationOverview::externalId)
                 .collect(Collectors.toSet());
+
 
         int numRemoved = tx.update(APPLICATION)
                 .set(APPLICATION.IS_REMOVED, true)
@@ -140,14 +131,10 @@ public class ApplicationLoader {
         System.out.println("Records Removed: " + numRemoved);
 
 
-
     }
 
 
-
-
-
-    private Map<String, Long> getOrgUnitRelations(DSLContext tx){
+    private Map<String, Long> getOrgUnitRelations(DSLContext tx) {
         return tx
                 .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
                 .from(ORGANISATIONAL_UNIT)
@@ -155,7 +142,10 @@ public class ApplicationLoader {
     }
 
     private Set<ApplicationOverview> loadPeopleFromFile(Map<String, Long> orgIdByOrgExtId) throws IOException {
-        InputStream resourceAsStream = ApplicationLoader.class.getClassLoader().getResourceAsStream(resource);
+
+        //InputStream resourceAsStream = ApplicationLoader.class.getClassLoader().getResourceAsStream(resource);
+
+        InputStream resourceAsStream = new FileInputStream(resource);
         ApplicationOverview[] rawOverviews = getJsonMapper().readValue(resourceAsStream, ApplicationOverview[].class);
 
 
@@ -172,7 +162,7 @@ public class ApplicationLoader {
 
 
     private Set<ApplicationOverview> getExistingPeople(DSLContext tx) {
-        Set<ApplicationOverview> existingPeople = tx
+        return tx
                 .select(APPLICATION.fields())
                 .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
                 .from(APPLICATION)
@@ -183,7 +173,7 @@ public class ApplicationLoader {
                 .map(r -> toDomain(r))
                 .collect(Collectors.toSet());
 
-        return existingPeople;
+
 
 
     }
@@ -245,13 +235,6 @@ public class ApplicationLoader {
 
     private static int summarizeResults(int[] rcs) {
         return IntStream.of(rcs).sum();
-    }
-
-
-
-
-    public static void main(String[] args) {
-        new ApplicationLoader("APPLICATION.json").synch();
     }
 
 

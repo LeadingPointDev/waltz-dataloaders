@@ -7,6 +7,7 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
@@ -32,7 +33,7 @@ public class DataTypeLoader {
     }
 
 
-    public void synch(){
+    public void synch() {
         dsl.transaction(ctx -> {
             DSLContext tx = ctx.dsl();
 
@@ -70,21 +71,12 @@ public class DataTypeLoader {
             updateRelationships(tx, diff.differingIntersection());
             markDepreciated(tx, diff.waltzOnly());
 
-
-
-
-//            throw new IOException("NO FURTHER!");
-
-
-
         });
-
-
 
 
     }
 
-    private void insertNew(DSLContext dsl, Collection<DataTypeOverview> toInsert){
+    private void insertNew(DSLContext dsl, Collection<DataTypeOverview> toInsert) {
         List<DataTypeRecord> recordsToInsert = toInsert
                 .stream()
                 .map(d -> toJooqRecord(d))
@@ -98,7 +90,7 @@ public class DataTypeLoader {
 
     }
 
-    private void updateRelationships(DSLContext dsl, Collection<DataTypeOverview> toInsert){
+    private void updateRelationships(DSLContext dsl, Collection<DataTypeOverview> toInsert) {
         List<DataTypeRecord> recordsToUpdate = toInsert
                 .stream()
                 .map(d -> {
@@ -114,7 +106,8 @@ public class DataTypeLoader {
 
         System.out.println("Updated: " + recordsUpdated);
     }
-    private void markDepreciated(DSLContext dsl, Collection<DataTypeOverview> toInsert){
+
+    private void markDepreciated(DSLContext dsl, Collection<DataTypeOverview> toInsert) {
         Set<Long> idsToRemove = toInsert
                 .stream()
                 .filter(overview -> !overview.depreciated())
@@ -143,9 +136,9 @@ public class DataTypeLoader {
 
     }
 
-    private Set<DataTypeOverview> loadDTsFromFile() throws IOException{
+    private Set<DataTypeOverview> loadDTsFromFile() throws IOException {
 
-        InputStream resourceAsStream = DataTypeLoader.class.getClassLoader().getResourceAsStream(resource);
+        InputStream resourceAsStream = new FileInputStream(resource);
         DataTypeOverview[] rawOverviews = getJsonMapper().readValue(resourceAsStream, DataTypeOverview[].class);
 
         return Stream
@@ -153,17 +146,10 @@ public class DataTypeLoader {
                 .collect(Collectors.toSet());
 
 
-
-
-
-
     }
 
 
-
-
-
-    private DataTypeOverview toDomain(Record r){
+    private DataTypeOverview toDomain(Record r) {
         DataTypeRecord record = r.into(DATA_TYPE);
         return ImmutableDataTypeOverview.builder()
                 .code(record.getCode())
@@ -179,8 +165,7 @@ public class DataTypeLoader {
     }
 
 
-
-    private DataTypeRecord toJooqRecord(DataTypeOverview d){
+    private DataTypeRecord toJooqRecord(DataTypeOverview d) {
         DataTypeRecord record = new DataTypeRecord();
         record.setCode(d.code());
         record.setName(d.name());

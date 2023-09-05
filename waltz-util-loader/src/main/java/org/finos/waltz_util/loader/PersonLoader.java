@@ -7,6 +7,7 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -25,28 +26,25 @@ public class PersonLoader {
      * 1. Load new people.
      * 2. Load DB data again, and do new comparison with email : ID comparisons
      * 3. Set Is_Removed for people who are not in the new data.
-     *
      */
 
     private final static Long ORPHAN_ORG_UNIT_ID = 150L; // this is a constant, so should be declared as static and uppercased
     private final String resource;  // these are initialised at construction, and should not change therefore marked as final
     private final DSLContext dsl;
 
-    public PersonLoader(String resource){
+    public PersonLoader(String resource) {
         this.resource = resource;
         AnnotationConfigApplicationContext springContext = new AnnotationConfigApplicationContext(DIBaseConfiguration.class);
         dsl = springContext.getBean(DSLContext.class);
     }
 
 
-
     // clearer method name
-    public void synch(){
+    public void synch() {
 
         // updates and insertions should be under a single tx
         dsl.transaction(ctx -> {
             DSLContext tx = ctx.dsl();
-
 
 
             // pulled out the common code into this method
@@ -67,10 +65,7 @@ public class PersonLoader {
             emailtoEmployeeID.putAll(mkEmailToEmployeeIdMap(existingPeople));
 
 
-
-
-            Set<PersonOverview> desiredPeople = loadPeopleFromFile(orgIdByOrgExtId,
-                                                                   emailtoEmployeeID);
+            Set<PersonOverview> desiredPeople = loadPeopleFromFile(orgIdByOrgExtId);
             //
             // take desiredPeople, and if their Employee ID matches, set thier ID to the map
             Map<String, Long> employeeIDtoID = EmployeeIDtoID(tx);
@@ -83,8 +78,6 @@ public class PersonLoader {
                                 .withManagerEmployeeId(p.managerEmployeeId().orElse("0"));
                     })
                     .collect(Collectors.toSet());
-
-
 
 
             // only need to do the diff once
@@ -105,7 +98,7 @@ public class PersonLoader {
     }
 
 
-    private void insertNew(DSLContext tx, Collection<PersonOverview> toInsert) throws IOException {
+    private void insertNew(DSLContext tx, Collection<PersonOverview> toInsert) {
 
 
 
@@ -121,11 +114,9 @@ public class PersonLoader {
                 .map(p -> {
                     PersonRecord record = toJooqRecord(tx, p);
                     record.changed(PERSON.ID, false);
-                    return record;})
+                    return record;
+                })
                 .collect(Collectors.toList());
-
-
-
 
 
         int recordsCreated = summarizeResults(tx
@@ -138,19 +129,7 @@ public class PersonLoader {
 
     private void updateRelationships(DSLContext tx,
                                      Collection<PersonOverview> toUpdate) {
-        /**
-         * for all entries, compare with JSON
-         * todo finish this bit
-         */
 
-        /**
-         * 1. get email -> manager ID relationships from DB
-         * 2. load new people from DB to create Existing PersonOverviews
-         * 3. load new people from JSON to create Desired PersonOverviews
-         * 4. compare the two sets of PersonOverviews
-         * 5. update IntersectingDifferent entries
-         * 6. set is_removed for rest
-         */
 
         List<PersonRecord> recordsToUpdate = toUpdate
                 .stream()
@@ -160,11 +139,7 @@ public class PersonLoader {
                     record.changed(PERSON.ID, false);
                     return record;
                 })
-               .collect(Collectors.toList());
-
-
-
-
+                .collect(Collectors.toList());
 
 
         int recordsUpdated = summarizeResults(tx   // no point splitting decl and assignment
@@ -191,13 +166,12 @@ public class PersonLoader {
         System.out.println("Removed: " + numRemoved + " records");
 
 
-
-
-
     }
 
-    private Map<String, String> EmailToEmployeeId () throws IOException {
-        InputStream resourceAsStream = PersonLoader.class.getClassLoader().getResourceAsStream(resource);
+    private Map<String, String> EmailToEmployeeId() throws IOException {
+        //InputStream resourceAsStream = PersonLoader.class.getClassLoader().getResourceAsStream(resource);
+
+        InputStream resourceAsStream = new FileInputStream(resource);
         PersonOverview[] rawOverviews = getJsonMapper().readValue(resourceAsStream, PersonOverview[].class);
         return Stream
                 .of(rawOverviews)
@@ -208,7 +182,7 @@ public class PersonLoader {
     }
 
 
-    private Map<String, Long> EmployeeIDtoID (DSLContext tx) throws IOException {
+    private Map<String, Long> EmployeeIDtoID(DSLContext tx){
         return tx
                 .select(PERSON.EMPLOYEE_ID, PERSON.ID)
                 .from(PERSON)
@@ -216,9 +190,9 @@ public class PersonLoader {
     }
 
 
-    private Set<PersonOverview> loadPeopleFromFile(Map<String, Long> orgIdByOrgExtId,
-                                                   Map<String, String> emailToEmployeeID) throws IOException {
-        InputStream resourceAsStream = PersonLoader.class.getClassLoader().getResourceAsStream(resource);
+    private Set<PersonOverview> loadPeopleFromFile(Map<String, Long> orgIdByOrgExtId) throws IOException {
+        //InputStream resourceAsStream = PersonLoader.class.getClassLoader().getResourceAsStream(resource);
+        InputStream resourceAsStream = new FileInputStream(resource);
         PersonOverview[] rawOverviews = getJsonMapper().readValue(resourceAsStream, PersonOverview[].class);
         return Stream
                 .of(rawOverviews)
@@ -233,7 +207,7 @@ public class PersonLoader {
     }
 
 
-    private ImmutablePersonOverview toDomain(Record r){
+    private ImmutablePersonOverview toDomain(Record r) {
         PersonRecord personRecord = r.into(PERSON);
         return ImmutablePersonOverview
                 .builder()
@@ -244,6 +218,7 @@ public class PersonLoader {
                 .kind(personRecord.getKind())
                 .managerEmployeeId(personRecord.getManagerEmployeeId())
                 .title(Optional.ofNullable(personRecord.getTitle()))
+                .userPrincipalName(Optional.ofNullable(personRecord.getUserPrincipalName()))
                 .departmentName(Optional.ofNullable(personRecord.getDepartmentName()))
                 .mobilePhone(Optional.ofNullable(personRecord.getMobilePhone()))
                 .officePhone(Optional.ofNullable(personRecord.getOfficePhone()))
@@ -253,7 +228,7 @@ public class PersonLoader {
     }
 
 
-    private PersonRecord toJooqRecord(DSLContext dsl, PersonOverview domain){
+    private PersonRecord toJooqRecord(DSLContext dsl, PersonOverview domain) {
         PersonRecord record = dsl.newRecord(PERSON);
 
         record.setId(domain.id().orElse(null));
@@ -262,6 +237,7 @@ public class PersonLoader {
         record.setEmail(domain.email());
         record.setDepartmentName(domain.departmentName().orElse(null));
         record.setKind(domain.kind());
+        record.setUserPrincipalName(domain.userPrincipalName().orElse(null));
 
         // sets unmanaged people to 0 on every insert statement where its not specified, as it will be updated on second pass.
         record.setManagerEmployeeId(domain.managerEmployeeId().orElse("0"));

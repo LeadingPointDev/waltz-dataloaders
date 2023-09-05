@@ -221,6 +221,12 @@
                 <artifactId>jackson-datatype-jsr310</artifactId>
                 <version>${jackson-jsr310.version}</version>
             </dependency>
+            <!-- Excel to Json -->
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>3.9</version>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>

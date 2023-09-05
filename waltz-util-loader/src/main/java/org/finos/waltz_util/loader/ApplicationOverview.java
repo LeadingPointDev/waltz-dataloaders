@@ -19,7 +19,9 @@ public abstract class ApplicationOverview {
 
 
     public abstract String name();
+
     public abstract Optional<String> description();
+
     @JsonProperty("assetCode")
     public abstract String externalId();
 
@@ -43,7 +45,7 @@ public abstract class ApplicationOverview {
     }
 
     @Value.Default
-    public String overallRating(){
+    public String overallRating() {
         return "Z";
     }
 
@@ -60,7 +62,9 @@ public abstract class ApplicationOverview {
     }
 
     public abstract Optional<Timestamp> plannedRetirementDate();
+
     public abstract Optional<Timestamp> actualRetirementDate();
+
     public abstract Optional<Timestamp> commissionDate();
 
     public abstract Boolean isRemoved();
@@ -70,15 +74,6 @@ public abstract class ApplicationOverview {
     public String provenance() {
         return "waltz-loader";
     }
-
-
-
-
-
-
-
-
-
 
 
     @Value.Auxiliary

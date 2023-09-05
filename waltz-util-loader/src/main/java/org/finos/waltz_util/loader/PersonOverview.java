@@ -16,6 +16,7 @@ import java.util.Optional;
 public abstract class PersonOverview {
     @Value.Auxiliary
     public abstract Optional<Long> id();
+
     @JsonProperty("resourceId")
     public abstract String employeeId(); // fixed name, java tends to avoid underscores in class names and method names
 
@@ -54,11 +55,6 @@ public abstract class PersonOverview {
     public abstract String organisationalUnitExternalId();
 
     public abstract Optional<Long> organisationalUnitId();
-
-
-
-
-
 
 
 }
