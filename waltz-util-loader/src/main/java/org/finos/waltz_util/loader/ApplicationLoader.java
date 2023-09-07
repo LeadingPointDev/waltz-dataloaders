@@ -118,7 +118,13 @@ public class ApplicationLoader {
     private void markRemoved(DSLContext tx, Collection<ApplicationOverview> toRemove) {
         Set<String> assetCodesToRemove = toRemove
                 .stream()
-                .filter(a -> !a.isRemoved())
+
+                .filter(a -> {
+                    if (a.isRemoved().isPresent()){
+                        return !a.isRemoved().get();
+                    }
+                    return false;
+                })
                 .map(ApplicationOverview::externalId)
                 .collect(Collectors.toSet());
 

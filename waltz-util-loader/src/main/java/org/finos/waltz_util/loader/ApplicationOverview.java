@@ -16,6 +16,9 @@ import java.util.Optional;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class ApplicationOverview {
 
+    @Value.Auxiliary
+    public abstract Optional<Long> id();
+
 
     public abstract String name();
 
@@ -64,7 +67,7 @@ public abstract class ApplicationOverview {
 
     public abstract Optional<Timestamp> commissionDate();
 
-    public abstract Boolean isRemoved();
+    public abstract Optional<Boolean> isRemoved();
 
 
     @Value.Default
@@ -73,8 +76,7 @@ public abstract class ApplicationOverview {
     }
 
 
-    @Value.Auxiliary
-    public abstract Optional<Long> id();
+
 
     public abstract Optional<Long> orgUnitId();
 
