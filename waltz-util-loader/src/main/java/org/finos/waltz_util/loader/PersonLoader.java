@@ -28,7 +28,7 @@ public class PersonLoader {
      * 3. Set Is_Removed for people who are not in the new data.
      */
 
-    private final static Long ORPHAN_ORG_UNIT_ID = 150L; // this is a constant, so should be declared as static and uppercased
+    private final static Long ORPHAN_ORG_UNIT_ID = -1L; // this is a constant, so should be declared as static and uppercased
     private final String resource;  // these are initialised at construction, and should not change therefore marked as final
     private final DSLContext dsl;
 
@@ -50,19 +50,13 @@ public class PersonLoader {
             // pulled out the common code into this method
             Map<String, Long> orgIdByOrgExtId = loadOrgIdByExtIdMap(tx);
 
-            Set<PersonOverview> existingPeople = tx
-                    .select(PERSON.fields())
-                    .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
-                    .from(PERSON)
-                    .innerJoin(ORGANISATIONAL_UNIT)
-                    .on(ORGANISATIONAL_UNIT.ID.eq(PERSON.ORGANISATIONAL_UNIT_ID))
-                    .fetch()
-                    .stream()
-                    .map(r -> toDomain(r))
-                    .collect(Collectors.toSet());
+            Set<PersonOverview> existingPeople = getExistingPeople(tx);
 
             Map<String, String> emailtoEmployeeID = EmailToEmployeeId();
             emailtoEmployeeID.putAll(mkEmailToEmployeeIdMap(existingPeople));
+
+
+
 
 
             Set<PersonOverview> desiredPeople = loadPeopleFromFile(orgIdByOrgExtId);
@@ -78,6 +72,8 @@ public class PersonLoader {
                                 .withManagerEmployeeId(p.managerEmployeeId().orElse("0"));
                     })
                     .collect(Collectors.toSet());
+
+
 
 
             // only need to do the diff once
@@ -98,7 +94,22 @@ public class PersonLoader {
     }
 
 
-    private void insertNew(DSLContext tx, Collection<PersonOverview> toInsert) {
+
+    private Set<PersonOverview> getExistingPeople(DSLContext tx) {
+         return tx
+                .select(PERSON.fields())
+                .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
+                .from(PERSON)
+                .innerJoin(ORGANISATIONAL_UNIT)
+                .on(ORGANISATIONAL_UNIT.ID.eq(PERSON.ORGANISATIONAL_UNIT_ID))
+                .fetch()
+                .stream()
+                .map(r -> toDomain(r))
+                .collect(Collectors.toSet());
+    }
+
+
+    private void insertNew(DSLContext tx, Collection<PersonOverview> toInsert) throws IOException {
 
 
 
@@ -129,7 +140,19 @@ public class PersonLoader {
 
     private void updateRelationships(DSLContext tx,
                                      Collection<PersonOverview> toUpdate) {
+        /**
+         * for all entries, compare with JSON
+         * todo finish this bit
+         */
 
+        /**
+         * 1. get email -> manager ID relationships from DB
+         * 2. load new people from DB to create Existing PersonOverviews
+         * 3. load new people from JSON to create Desired PersonOverviews
+         * 4. compare the two sets of PersonOverviews
+         * 5. update IntersectingDifferent entries
+         * 6. set is_removed for rest
+         */
 
         List<PersonRecord> recordsToUpdate = toUpdate
                 .stream()
@@ -168,6 +191,11 @@ public class PersonLoader {
 
     }
 
+    public void peekFile() {
+
+    }
+
+
     private Map<String, String> EmailToEmployeeId() throws IOException {
         //InputStream resourceAsStream = PersonLoader.class.getClassLoader().getResourceAsStream(resource);
 
@@ -182,7 +210,7 @@ public class PersonLoader {
     }
 
 
-    private Map<String, Long> EmployeeIDtoID(DSLContext tx){
+    private Map<String, Long> EmployeeIDtoID(DSLContext tx) throws IOException {
         return tx
                 .select(PERSON.EMPLOYEE_ID, PERSON.ID)
                 .from(PERSON)
@@ -196,13 +224,20 @@ public class PersonLoader {
         PersonOverview[] rawOverviews = getJsonMapper().readValue(resourceAsStream, PersonOverview[].class);
         return Stream
                 .of(rawOverviews)
-                .map(d -> ImmutablePersonOverview
+                .map(d -> {
+                    // if cannot find org unit, skip record and print warning
+
+
+
+                    PersonOverview person = ImmutablePersonOverview
                         .copyOf(d)
                         .withOrganisationalUnitId(orgIdByOrgExtId.getOrDefault(d.organisationalUnitExternalId().toString(), ORPHAN_ORG_UNIT_ID))
                         // this bit is better written the other way around as d.managerEmail may be undefined:
                         // withManagerEmployeeId(emailToEmployeeID.getOrDefault(d.managerEmail().get(), "0")))
                         .withManagerEmployeeId(d.managerEmployeeId())
-                        .withEmail(d.email()))
+                        .withEmail(d.email());
+                        return person;
+                })
                 .collect(Collectors.toSet());
     }
 
@@ -274,7 +309,7 @@ public class PersonLoader {
 
 
     public static void main(String[] args) {
-        new PersonLoader("PERSON2.json").synch();
+        new PersonLoader("C:\\Data\\Coding Stuff\\Waltz-Loaders\\waltz-util-loader\\src\\main\\resources\\PERSON2.json").synch();
     }
 
 }

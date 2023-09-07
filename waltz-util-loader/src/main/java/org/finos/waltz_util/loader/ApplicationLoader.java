@@ -25,7 +25,7 @@ import static org.finos.waltz_util.schema.Tables.ORGANISATIONAL_UNIT;
 
 
 public class ApplicationLoader {
-    private final static Long ORPHAN_ORG_UNIT_ID = 150L; // this is a constant, so should be declared as static and uppercased
+    private final static Long ORPHAN_ORG_UNIT_ID = -1L; // this is a constant, so should be declared as static and uppercased
     private final String resource;  // these are initialised at construction, and should not change therefore marked as final
     private final DSLContext dsl;
 
@@ -46,7 +46,7 @@ public class ApplicationLoader {
             desiredApps = desiredApps
                     .stream()
                     .map(a -> {
-                                Long id = externalIdtoId.get(a.externalId());
+                                Long id = externalIdtoId.getOrDefault(a.externalId(), ORPHAN_ORG_UNIT_ID);
                                 return ImmutableApplicationOverview.copyOf(a)
                                         .withId(id);
 
@@ -162,7 +162,7 @@ public class ApplicationLoader {
 
 
     private Set<ApplicationOverview> getExistingPeople(DSLContext tx) {
-        return tx
+        Set<ApplicationOverview> existingPeople = tx
                 .select(APPLICATION.fields())
                 .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
                 .from(APPLICATION)
@@ -173,7 +173,7 @@ public class ApplicationLoader {
                 .map(r -> toDomain(r))
                 .collect(Collectors.toSet());
 
-
+        return existingPeople;
 
 
     }
@@ -187,7 +187,7 @@ public class ApplicationLoader {
 
     private ApplicationOverview toDomain(Record r) {
         ApplicationRecord app = r.into(APPLICATION);
-        Map<String, Long> ExtOUIDToOUID = getOrgUnitRelations(dsl);
+        //Map<String, Long> ExtOUIDToOUID = getOrgUnitRelations(dsl);
         return ImmutableApplicationOverview
                 .builder()
                 .id(app.getId().longValue())
@@ -237,5 +237,9 @@ public class ApplicationLoader {
         return IntStream.of(rcs).sum();
     }
 
+
+    public static void main(String[] args) {
+        new ApplicationLoader("C:\\Data\\Coding Stuff\\Waltz-Loaders\\waltz-util-loader\\src\\main\\resources\\APPLICATION.json").synch();
+    }
 
 }

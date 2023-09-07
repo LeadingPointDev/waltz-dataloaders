@@ -1,5 +1,8 @@
 package org.finos.waltz_util.loader;
 
+import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import org.finos.waltz_util.common.DIBaseConfiguration;
 import org.finos.waltz_util.common.helper.DiffResult;
 import org.finos.waltz_util.schema.tables.records.DataTypeRecord;
@@ -10,13 +13,9 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
 import static org.finos.waltz_util.schema.Tables.DATA_TYPE;
@@ -137,19 +136,33 @@ public class DataTypeLoader {
     }
 
     private Set<DataTypeOverview> loadDTsFromFile() throws IOException {
+        Set<DataTypeOverview> dataTypeOverviews = new HashSet<>();
+        ObjectMapper jsonMapper = getJsonMapper();
 
-        InputStream resourceAsStream = new FileInputStream(resource);
-        DataTypeOverview[] rawOverviews = getJsonMapper().readValue(resourceAsStream, DataTypeOverview[].class);
+        // Create an ObjectReader for DataTypeOverview
+        ObjectReader reader = jsonMapper.readerFor(DataTypeOverview.class);
 
-        return Stream
-                .of(rawOverviews)
-                .collect(Collectors.toSet());
+        // Read the file as a stream of DataTypeOverview objects
+        try (InputStream resourceAsStream = new FileInputStream(resource)) {
+            MappingIterator<DataTypeOverview> iterator = reader.readValues(resourceAsStream);
+            while (iterator.hasNext()) {
+                try {
+                    DataTypeOverview overview = iterator.next();
+                    dataTypeOverviews.add(overview);
+                } catch (Exception e) {
+                    // Get the location (line number) of the error
+                    System.out.println(e);
+                }
+            }
+        }
 
-
+        return dataTypeOverviews;
     }
 
 
+
     private DataTypeOverview toDomain(Record r) {
+
         DataTypeRecord record = r.into(DATA_TYPE);
         return ImmutableDataTypeOverview.builder()
                 .code(record.getCode())
@@ -183,7 +196,7 @@ public class DataTypeLoader {
     }
 
     public static void main(String[] args) {
-        new DataTypeLoader("DATA-TYPE.json").synch();
+        new DataTypeLoader("C:\\Data\\Coding Stuff\\Waltz-Loaders\\waltz-util-loader\\src\\main\\resources\\DATA-TYPE.json").synch();
     }
 
 }

@@ -19,7 +19,7 @@ public class Main {
                     String appJson = appConverter.convert();
                     ApplicationLoader al = new ApplicationLoader(appJson);
                     al.synch();
-                    i = i + 3;
+                    i = i + 2;
                     break;
                 case "-P":
                     System.out.println("Loading people");
@@ -28,7 +28,7 @@ public class Main {
 
                     PersonLoader pl = new PersonLoader(peopleJson);
                     pl.synch();
-                    i = i + 3;
+                    i = i + 2;
                     break;
                 case "-D":
                     System.out.println("Loading data types");
@@ -36,7 +36,7 @@ public class Main {
                     String dtJson = dtConverter.convert();
                     DataTypeLoader dtl = new DataTypeLoader(dtJson);
                     dtl.synch();
-                    i = i + 3;
+                    i = i + 2;
                     break;
                 case "-O":
                     System.out.println("Loading org units");
@@ -45,7 +45,7 @@ public class Main {
 
                     OrgUnitLoader ol = new OrgUnitLoader(ouJson);
                     ol.synch();
-                    i = i + 3;
+                    i = i + 2;
                     break;
                 default:
                     System.out.println(args[i]);

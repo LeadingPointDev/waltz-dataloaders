@@ -1,6 +1,5 @@
 package org.finos.waltz_util.loader;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
@@ -19,10 +18,10 @@ public abstract class OrgUnitOverview {
         return 0L;
     }
 
-    @JsonProperty("Name")
+
     public abstract String name();
 
-    @JsonProperty("Description")
+
     public abstract Optional<String> description();
 
     public abstract Optional<Long> parentID();
@@ -38,10 +37,9 @@ public abstract class OrgUnitOverview {
     }
 
 
-    @JsonProperty("Organisation ID")
     public abstract String externalID();
 
-    @JsonProperty("Parent ID")
+
     @Value.Auxiliary
     public abstract Optional<String> parentExternalID();
 

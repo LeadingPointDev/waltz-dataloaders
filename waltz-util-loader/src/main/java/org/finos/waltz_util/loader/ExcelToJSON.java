@@ -14,12 +14,14 @@ public class ExcelToJSON {
     private final String excelFileName;
     private final String outputFileName;
     private final String configFileName;
-    private final Map<String, String> columnMappings;
+    private Map<String, String> columnMappings;
 
     public ExcelToJSON(String inputFileName, String configFileName) throws IOException {
         this.excelFileName = inputFileName;
         this.outputFileName = inputFileName.substring(0, inputFileName.lastIndexOf(".xlsx")) + "-out.json";
-
+        System.out.println("Input Excel file: " + excelFileName);
+        System.out.println("Config File : " + configFileName);
+        System.out.println("Output file name: " + outputFileName);
         this.configFileName = configFileName;
         this.columnMappings = loadColumnMappings();
     }
@@ -49,7 +51,10 @@ public class ExcelToJSON {
                     String externalColumnName = headerRow.getCell(col).getStringCellValue();
                     try {
                         String internalColumnName = columnMappings.get(externalColumnName);
-                        jsonObject.put(internalColumnName, getValueFromCell(cell));
+                        // excel may contain additional columns
+                        if (internalColumnName != null) {
+                            jsonObject.put(internalColumnName, getValueFromCell(cell));
+                        }
                     } catch (NullPointerException e) {
                         System.out.println("No mapping for column: " + externalColumnName);
                     }

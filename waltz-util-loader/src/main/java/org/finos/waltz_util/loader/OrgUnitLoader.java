@@ -49,7 +49,7 @@ public class OrgUnitLoader {
                             .withId(externalIdToId.get(o.externalID()))
                             .withParentID(Optional.ofNullable(o.parentExternalID().map(externalIdToId::get).orElse(null))))
                     .collect(Collectors.toSet());
-
+            desiredOUs.add(createOrphanOrg());
 
             DiffResult<OrgUnitOverview> diff = DiffResult.mkDiff(
                     existingOUs,
@@ -64,7 +64,24 @@ public class OrgUnitLoader {
             deleteRemoved(diff.waltzOnly(), tx);
 
 
+
+
         });
+    }
+
+    private OrgUnitOverview createOrphanOrg() {
+        return ImmutableOrgUnitOverview
+                .builder()
+                .id(-1L)
+                .name("Orphan Organisation")
+                .description("This org will catch any malformed entities that have incorrectly set parents. Any entries that reference this org have an incorrect field in the external data, or there is a bug.")
+                .lastUpdatedAt(new Timestamp(System.currentTimeMillis()))
+                .externalID("ORPHAN")
+                .createdBy("waltz-loader")
+
+                .lastUpdatedBy("waltz-loader")
+                .provenance("waltz-loader")
+                .build();
     }
 
     private void insertNew(Collection<OrgUnitOverview> toInsert, DSLContext dsl) {
@@ -72,8 +89,7 @@ public class OrgUnitLoader {
                 .stream()
                 .map(o -> {
                     OrganisationalUnitRecord record = toJooqRecord(o);
-                    maxId = maxId + 20;
-                    record.setId(maxId);
+
                     return record;
                 }).collect(Collectors.toList());
         int numInserted = summarizeResults(dsl
@@ -152,20 +168,23 @@ public class OrgUnitLoader {
         Map<String, Long> externalIdToId = externalIDtoIDMap(dsl);
 
 
-        return Stream
+        Set<OrgUnitOverview> desiredOUs = Stream
                 .of(rawOverviews)
                 .map(o -> {
-                    //maxId = maxId + 20;
+                    maxId = maxId + 20;
                     ImmutableOrgUnitOverview overview = ImmutableOrgUnitOverview
                             .copyOf(o)
                             .withParentID(Optional.ofNullable(o.parentExternalID())
-                                    .map(externalIdToId::get));
-                    //.withId(maxId);
+                                    .map(externalIdToId::get))
+                            .withId(maxId);
 
                     return overview;
                 })
 
                 .collect(Collectors.toSet());
+
+        return desiredOUs;
+
 
     }
 
@@ -212,7 +231,7 @@ public class OrgUnitLoader {
                 .fetchMap(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID);
 
 
-        InputStream resourceAsStream = OrgUnitLoader.class.getClassLoader().getResourceAsStream(resource);
+        InputStream resourceAsStream = new FileInputStream(resource);
         OrgUnitOverview[] rawOverviews = getJsonMapper().readValue(resourceAsStream, OrgUnitOverview[].class);
         Map<String, Long> externalMap = Stream
                 .of(rawOverviews)

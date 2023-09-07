@@ -1,7 +1,6 @@
 package org.finos.waltz_util.loader;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.finos.waltz_util.common.model.ApplicationKind;
@@ -22,23 +21,22 @@ public abstract class ApplicationOverview {
 
     public abstract Optional<String> description();
 
-    @JsonProperty("assetCode")
+
     public abstract String externalId();
 
-    @JsonProperty("parentAssetCode")
+
     public abstract Optional<String> parentExternalId();
 
-    @JsonProperty("organisationalUnitId")
+
     public abstract String organisationalUnitExternalId();
 
-    @JsonProperty("applicationKind")
+
     @Value.Default
     public ApplicationKind kind() {
         return ApplicationKind.IN_HOUSE;
     }
 
     @Value.Default
-    @JsonProperty("lifecyclePhase")
     public String lifecyclePhase() {
         return "ACTIVE";
 
@@ -50,7 +48,6 @@ public abstract class ApplicationOverview {
     }
 
 
-    @JsonProperty("businessCriticality")
     @Value.Default
     public Criticality criticality() {
         return Criticality.MEDIUM;
