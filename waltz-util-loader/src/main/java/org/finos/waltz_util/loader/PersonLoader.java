@@ -2,22 +2,30 @@ package org.finos.waltz_util.loader;
 
 import org.finos.waltz_util.common.DIBaseConfiguration;
 import org.finos.waltz_util.common.helper.DiffResult;
+import org.finos.waltz_util.schema.tables.Person;
 import org.finos.waltz_util.schema.tables.records.PersonRecord;
 import org.jooq.DSLContext;
+import org.jooq.ExecuteListener;
+import org.jooq.ExecuteListenerProvider;
 import org.jooq.Record;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.math.BigInteger;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
-import static org.finos.waltz_util.schema.Tables.ORGANISATIONAL_UNIT;
-import static org.finos.waltz_util.schema.Tables.PERSON;
+import static org.finos.waltz_util.schema.Tables.*;
 
 
 public class PersonLoader {

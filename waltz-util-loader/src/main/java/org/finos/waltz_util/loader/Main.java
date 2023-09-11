@@ -1,11 +1,12 @@
 package org.finos.waltz_util.loader;
 
 import java.io.IOException;
+import java.sql.SQLOutput;
 
 public class Main {
 
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         System.out.println("Loaded");
 
 
@@ -42,11 +43,42 @@ public class Main {
                     System.out.println("Loading org units");
                     ExcelToJSON ouConverter = new ExcelToJSON(args[i + 1], args[i + 2]);
                     String ouJson = ouConverter.convert();
-
                     OrgUnitLoader ol = new OrgUnitLoader(ouJson);
                     ol.synch();
                     i = i + 2;
                     break;
+                case "-M":
+                    // for measurables need to specify what category
+                    // args will look like
+                    // java -jar loader.jar -M PRODUCT <path to Excel file> <path to config file>
+                    System.out.println("Loading measurables");
+                    String prefix = "";
+                    i++;
+                    switch (args[i]) {
+                        case "PRODUCT":
+                            System.out.println("Product Selected");
+
+                            break;
+                        case "CAPABILITY":
+                            System.out.println("Capability Selected");
+
+                            break;
+                        case "BOUNDED_CONTEXT":
+                            System.out.println("Bounded Context Selected");
+
+                            break;
+                    default:
+                        throw new IllegalArgumentException("Measurable category not recognised");
+                    }
+                    String selector = args[i];
+                    ExcelToJSON mConverter = new ExcelToJSON(args[i + 1], args[i + 2]);
+                    String mJson = mConverter.convert();
+                    MeasurablesLoader ml = new MeasurablesLoader(mJson, selector);
+                    ml.synch();
+                    i = i + 2;
+                    break;
+
+
                 default:
                     System.out.println(args[i]);
                     break;

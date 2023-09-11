@@ -16,8 +16,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+
 import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
-import static org.finos.waltz_util.schema.Tables.ORGANISATIONAL_UNIT;
+import static org.finos.waltz_util.schema.Tables.*;
 
 public class OrgUnitLoader {
 

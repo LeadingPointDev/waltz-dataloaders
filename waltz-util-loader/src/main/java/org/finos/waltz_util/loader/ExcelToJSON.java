@@ -31,7 +31,7 @@ public class ExcelToJSON {
         return objectMapper.readValue(new File(configFileName), HashMap.class);
     }
 
-    public List<Map<String, Object>> convertToJSON() throws IOException {
+    public List<Map<String, Object>> convertToJSON() throws Exception {
         List<Map<String, Object>> jsonArray = new ArrayList<>();
 
         try (FileInputStream fis = new FileInputStream(new File(excelFileName));
@@ -65,13 +65,14 @@ public class ExcelToJSON {
         return jsonArray;
     }
 
-    private String getValueFromCell(Cell cell) {
+    private String getValueFromCell(Cell cell) throws Exception {
         if (cell == null) {
             return "";
         }
         switch (cell.getCellType()) {
             case STRING:
                 return cell.getStringCellValue();
+
             case NUMERIC:
                 if (DateUtil.isCellDateFormatted(cell)) {
                     // Convert date to desired format if needed
@@ -84,8 +85,12 @@ public class ExcelToJSON {
                         return String.valueOf(numericValue);
                     }
                 }
+
             case BOOLEAN:
                 return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                throw new Exception("The Cell at " + cell.getAddress() + " contains a formula. This loader does not support formulas (yet).");
+                //todo: add support for formula
             default:
                 return "";
         }
@@ -98,7 +103,7 @@ public class ExcelToJSON {
     }
 
 
-    public String convert() throws IOException {
+    public String convert() throws Exception {
         List<Map<String, Object>> jsonArray = convertToJSON();
         saveJsonEntriesToFile(jsonArray, outputFileName);
         return outputFileName;

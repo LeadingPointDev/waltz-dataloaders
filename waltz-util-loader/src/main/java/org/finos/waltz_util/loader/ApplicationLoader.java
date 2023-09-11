@@ -14,14 +14,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
-import static org.finos.waltz_util.schema.Tables.APPLICATION;
-import static org.finos.waltz_util.schema.Tables.ORGANISATIONAL_UNIT;
+import static org.finos.waltz_util.schema.Tables.*;
 
 
 public class ApplicationLoader {
