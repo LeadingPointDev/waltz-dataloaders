@@ -3,6 +3,7 @@ package org.finos.waltz_util.loader;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
+
 import java.util.Optional;
 
 @Value.Immutable
@@ -40,13 +41,12 @@ public abstract class MeasurablesOverview {
 
     public abstract Optional<Long> organisational_unit_id();
 
-    @Value.Default
+    @Value.Default //todo: ensure position default is correct
     public Integer position(){
         return 0;
     }
 
 
-    /// used to determine parent
 
 
 

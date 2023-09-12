@@ -1,9 +1,7 @@
 package org.finos.waltz_util.loader;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
 import org.immutables.value.Value;
 
 import java.sql.Timestamp;
@@ -26,32 +24,32 @@ public abstract class OrgUnitOverview {
 
     public abstract Optional<String> description();
 
-    public abstract Optional<Long> parentID();
+    public abstract Optional<Long> parent_id();
 
 
     @Value.Auxiliary
-    public abstract Optional<Timestamp> createdAt();
+    public abstract Optional<Timestamp> created_at();
 
     @Value.Auxiliary
     @Value.Default
-    public Timestamp lastUpdatedAt() {
+    public Timestamp last_updated_at() {
         return new Timestamp(System.currentTimeMillis());
     }
 
 
-    public abstract String externalID();
+    public abstract String external_id();
 
 
     @Value.Auxiliary
-    public abstract Optional<String> parentExternalID();
+    public abstract Optional<String> parent_external_id();
 
     @Value.Default
-    public String createdBy() {
+    public String created_by() {
         return "waltz-loader";
     }
 
     @Value.Default
-    public String lastUpdatedBy() {
+    public String last_updated_by() {
         return "waltz-loader";
     }
 

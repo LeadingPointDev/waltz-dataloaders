@@ -14,17 +14,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
-import static org.finos.waltz_util.schema.Tables.*;
+import static org.finos.waltz_util.schema.Tables.APPLICATION;
+import static org.finos.waltz_util.schema.Tables.ORGANISATIONAL_UNIT;
 
 
 public class ApplicationLoader {
@@ -42,20 +39,11 @@ public class ApplicationLoader {
     public void synch() {
         dsl.transaction(ctx -> {
             DSLContext tx = ctx.dsl();
-            Map<String, Long> externalIdtoId = getExternalIdToIdMap(tx);
 
 
-            Set<ApplicationOverview> desiredApps = loadPeopleFromFile(getOrgUnitRelations(tx));
-            desiredApps = desiredApps
-                    .stream()
-                    .map(a -> {
-                                Long id = externalIdtoId.getOrDefault(a.externalId(), ORPHAN_ORG_UNIT_ID);
-                                return ImmutableApplicationOverview.copyOf(a)
-                                        .withId(id);
 
-                            }
-                    )
-                    .collect(Collectors.toSet());
+            Set<ApplicationOverview> rawApps = loadPeopleFromFile(getOrgUnitRelations(tx));
+            Set<ApplicationOverview> desiredApps = processApps(rawApps, tx);
 
 
             Set<ApplicationOverview> existingApps = getExistingPeople(tx);
@@ -66,7 +54,7 @@ public class ApplicationLoader {
             DiffResult<ApplicationOverview> diff = DiffResult.mkDiff(
                     existingApps,
                     desiredApps,
-                    ApplicationOverview::externalId,
+                    ApplicationOverview::external_id,
                     Object::equals);
 
 
@@ -76,6 +64,20 @@ public class ApplicationLoader {
         });
 
 
+    }
+
+    private Set<ApplicationOverview> processApps(Set<ApplicationOverview> rawApps, DSLContext dsl) {
+        Map<String, Long> externalIdtoId = getExternalIdToIdMap(dsl);
+        return rawApps
+                .stream()
+                .map(a -> {
+                            Long id = externalIdtoId.getOrDefault(a.external_id(), ORPHAN_ORG_UNIT_ID);
+                            return ImmutableApplicationOverview.copyOf(a)
+                                    .withId(id);
+
+                        }
+                )
+                .collect(Collectors.toSet());
     }
 
 
@@ -128,7 +130,7 @@ public class ApplicationLoader {
                     }
                     return false;
                 })
-                .map(ApplicationOverview::externalId)
+                .map(ApplicationOverview::external_id)
                 .collect(Collectors.toSet());
 
 
@@ -162,8 +164,8 @@ public class ApplicationLoader {
                 .of(rawOverviews)
                 .map(a -> ImmutableApplicationOverview
                         .copyOf(a)
-                        .withOrgUnitId(orgIdByOrgExtId.getOrDefault(
-                                a.organisationalUnitExternalId(),
+                        .withOrganisational_unit_id(orgIdByOrgExtId.getOrDefault(
+                                a.organisational_unit_external_id(),
                                 ORPHAN_ORG_UNIT_ID)))
 
                 .collect(Collectors.toSet());
@@ -200,21 +202,21 @@ public class ApplicationLoader {
         return ImmutableApplicationOverview
                 .builder()
                 .id(app.getId().longValue())
-                .externalId(app.getAssetCode())
-                .organisationalUnitExternalId(r.get(ORGANISATIONAL_UNIT.EXTERNAL_ID))
-                .orgUnitId(app.getOrganisationalUnitId())
+                .external_id(app.getAssetCode())
+                .organisational_unit_external_id(r.get(ORGANISATIONAL_UNIT.EXTERNAL_ID))
+                .organisational_unit_id(app.getOrganisationalUnitId())
                 .name(app.getName())
                 .description(app.getDescription())
                 .kind(ApplicationKind.valueOf(app.getKind()))
-                .lifecyclePhase(app.getLifecyclePhase())
-                .parentExternalId(Optional.ofNullable(app.getParentAssetCode()))
-                .overallRating(app.getOverallRating())
+                .lifecycle_phase(app.getLifecyclePhase())
+                .parent_external_id(Optional.ofNullable(app.getParentAssetCode()))
+                .overall_rating(app.getOverallRating())
                 .criticality(Criticality.valueOf(app.getBusinessCriticality()))
                 .isRemoved(app.getIsRemoved())
-                .entityLifecycleStatus(app.getEntityLifecycleStatus())
-                .plannedRetirementDate(Optional.ofNullable(app.getPlannedRetirementDate()))
-                .actualRetirementDate(Optional.ofNullable(app.getActualRetirementDate()))
-                .commissionDate(Optional.ofNullable(app.getCommissionDate()))
+                .entity_lifecycle_status(app.getEntityLifecycleStatus())
+                .planned_retirement_date(Optional.ofNullable(app.getPlannedRetirementDate()))
+                .actual_retirement_date(Optional.ofNullable(app.getActualRetirementDate()))
+                .commission_date(Optional.ofNullable(app.getCommissionDate()))
                 .build();
     }
 
@@ -225,14 +227,14 @@ public class ApplicationLoader {
         record.setId(app.id().orElse(null));
         record.setName(app.name());
         record.setDescription(app.description().orElse(null));
-        record.setAssetCode(app.externalId());
-        record.setCreatedAt(app.commissionDate().orElse(Timestamp.valueOf(LocalDateTime.now())));
+        record.setAssetCode(app.external_id());
+        record.setCreatedAt(app.commission_date().orElse(Timestamp.valueOf(LocalDateTime.now())));
         record.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
-        record.setOrganisationalUnitId(app.orgUnitId().orElseThrow(() -> new IllegalArgumentException("No org unit id")));
+        record.setOrganisationalUnitId(app.organisational_unit_id().orElseThrow(() -> new IllegalArgumentException("No org unit id")));
         record.setKind(app.kind().name());
-        record.setLifecyclePhase(app.lifecyclePhase());
-        record.setParentAssetCode(app.parentExternalId().orElse(null));
-        record.setOverallRating(app.overallRating());
+        record.setLifecyclePhase(app.lifecycle_phase());
+        record.setParentAssetCode(app.parent_external_id().orElse(null));
+        record.setOverallRating(app.overall_rating());
         record.setProvenance("waltz-dataloaders");
         record.setBusinessCriticality(app.criticality().name());
         record.setIsRemoved(false);
@@ -244,11 +246,6 @@ public class ApplicationLoader {
 
     private static int summarizeResults(int[] rcs) {
         return IntStream.of(rcs).sum();
-    }
-
-
-    public static void main(String[] args) {
-        new ApplicationLoader("C:\\Data\\Coding Stuff\\Waltz-Loaders\\waltz-util-loader\\src\\main\\resources\\APPLICATION.json").synch();
     }
 
 }

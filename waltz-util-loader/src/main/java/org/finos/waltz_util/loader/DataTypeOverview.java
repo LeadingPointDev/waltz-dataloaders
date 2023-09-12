@@ -1,10 +1,8 @@
 package org.finos.waltz_util.loader;
 
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
 import org.immutables.value.Value;
 
 import java.util.Optional;
@@ -22,7 +20,7 @@ public abstract class DataTypeOverview {
     public abstract Optional<String> description();
 
 
-    public abstract Optional<Long> parentID();
+    public abstract Optional<Long> parent_id();
 
     @Value.Default
     public Boolean concrete(){

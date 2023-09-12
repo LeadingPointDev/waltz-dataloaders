@@ -16,9 +16,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-
 import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
-import static org.finos.waltz_util.schema.Tables.*;
+import static org.finos.waltz_util.schema.Tables.ORGANISATIONAL_UNIT;
 
 public class OrgUnitLoader {
 
@@ -39,23 +38,21 @@ public class OrgUnitLoader {
 
             Set<OrgUnitOverview> existingOUs = getExistingOrgUnits(tx);
             maxId = existingOUs.stream().map(OrgUnitOverview::id).max(Long::compareTo).orElse(0L);
-            Set<OrgUnitOverview> unprocessedOUs = loadDesiredOUs(tx);
+            Set<OrgUnitOverview> rawOUs = loadDesiredOUs(tx);
 
-            Map<String, Long> externalIdToId = mapExternalIDs(existingOUs, unprocessedOUs);
+            Map<String, Long> externalIdToId = mapExternalIDs(existingOUs, rawOUs);
             // go through desiredOUs and set ID's where needed
 
-            Set<OrgUnitOverview> desiredOUs = unprocessedOUs
-                    .stream()
-                    .map(o -> ImmutableOrgUnitOverview.copyOf(o)
-                            .withId(externalIdToId.get(o.externalID()))
-                            .withParentID(Optional.ofNullable(o.parentExternalID().map(externalIdToId::get).orElse(null))))
-                    .collect(Collectors.toSet());
+            Set<OrgUnitOverview> desiredOUs = processOUs(rawOUs, externalIdToId);
             desiredOUs.add(createOrphanOrg());
+
+
+
 
             DiffResult<OrgUnitOverview> diff = DiffResult.mkDiff(
                     existingOUs,
                     desiredOUs,
-                    OrgUnitOverview::externalID,
+                    OrgUnitOverview::external_id,
                     Object::equals
             );
 
@@ -70,17 +67,27 @@ public class OrgUnitLoader {
         });
     }
 
+    private Set<OrgUnitOverview> processOUs(Set<OrgUnitOverview> rawOUs, Map<String, Long> externalIdToId) {
+        return rawOUs
+                .stream()
+                .map(o -> ImmutableOrgUnitOverview.copyOf(o)
+                        .withId(externalIdToId.get(o.external_id()))
+                        .withParent_id(Optional.ofNullable(o.parent_external_id().map(externalIdToId::get).orElse(null))))
+                .collect(Collectors.toSet());
+
+    }
+
     private OrgUnitOverview createOrphanOrg() {
         return ImmutableOrgUnitOverview
                 .builder()
                 .id(-1L)
                 .name("Orphan Organisation")
                 .description("This org will catch any malformed entities that have incorrectly set parents. Any entries that reference this org have an incorrect field in the external data, or there is a bug.")
-                .lastUpdatedAt(new Timestamp(System.currentTimeMillis()))
-                .externalID("ORPHAN")
-                .createdBy("waltz-loader")
+                .last_updated_at(new Timestamp(System.currentTimeMillis()))
+                .external_id("ORPHAN")
+                .created_by("waltz-loader")
 
-                .lastUpdatedBy("waltz-loader")
+                .last_updated_by("waltz-loader")
                 .provenance("waltz-loader")
                 .build();
     }
@@ -135,9 +142,9 @@ public class OrgUnitLoader {
 
     private Map<String, Long> mapExternalIDs(Set<OrgUnitOverview> waltzOverviews, Set<OrgUnitOverview> externalOverviews) {
         Map<String, Long> waltzIDMap = waltzOverviews.stream()
-                .collect(Collectors.toMap(OrgUnitOverview::externalID, OrgUnitOverview::id));
+                .collect(Collectors.toMap(OrgUnitOverview::external_id, OrgUnitOverview::id));
         Map<String, Long> externalIDMap = externalOverviews.stream()
-                .collect(Collectors.toMap(OrgUnitOverview::externalID, OrgUnitOverview::id));
+                .collect(Collectors.toMap(OrgUnitOverview::external_id, OrgUnitOverview::id));
 
         // map the two maps together and prioritize the internal IDs
         return Stream
@@ -175,7 +182,7 @@ public class OrgUnitLoader {
                     maxId = maxId + 20;
                     ImmutableOrgUnitOverview overview = ImmutableOrgUnitOverview
                             .copyOf(o)
-                            .withParentID(Optional.ofNullable(o.parentExternalID())
+                            .withParent_id(Optional.ofNullable(o.parent_external_id())
                                     .map(externalIdToId::get))
                             .withId(maxId);
 
@@ -196,8 +203,8 @@ public class OrgUnitLoader {
                 .name(record.getName())
                 .description(record.getDescription())
                 .id(record.getId())
-                .parentID(Optional.ofNullable(record.getParentId()))
-                .externalID(record.getExternalId())
+                .parent_id(Optional.ofNullable(record.getParentId()))
+                .external_id(record.getExternalId())
                 // do we need to have the created at/updated at fields, I think not?
 //                .createdAt(record.getCreatedAt())
 //                .lastUpdatedAt(record.getLastUpdatedAt())
@@ -215,12 +222,12 @@ public class OrgUnitLoader {
         record.setId(o.id());
         record.setName(o.name());
         record.setDescription(o.description().orElse(null));
-        record.setParentId(o.parentID().orElse(null));
-        record.setExternalId(o.externalID());
-        record.setCreatedAt(o.createdAt().orElse(new Timestamp(System.currentTimeMillis())));
+        record.setParentId(o.parent_id().orElse(null));
+        record.setExternalId(o.external_id());
+        record.setCreatedAt(o.created_at().orElse(new Timestamp(System.currentTimeMillis())));
         record.setLastUpdatedAt(new Timestamp(System.currentTimeMillis()));
-        record.setCreatedBy(o.createdBy());
-        record.setLastUpdatedBy(o.lastUpdatedBy());
+        record.setCreatedBy(o.created_by());
+        record.setLastUpdatedBy(o.last_updated_by());
         record.setProvenance(o.provenance());
         return record;
     }
@@ -236,7 +243,7 @@ public class OrgUnitLoader {
         OrgUnitOverview[] rawOverviews = getJsonMapper().readValue(resourceAsStream, OrgUnitOverview[].class);
         Map<String, Long> externalMap = Stream
                 .of(rawOverviews)
-                .collect(Collectors.toMap(OrgUnitOverview::externalID, OrgUnitOverview::id));
+                .collect(Collectors.toMap(OrgUnitOverview::external_id, OrgUnitOverview::id));
 
 
         return Stream
@@ -251,10 +258,6 @@ public class OrgUnitLoader {
 
     private static int summarizeResults(int[] rcs) {
         return IntStream.of(rcs).sum();
-    }
-
-    public static void main(String[] args) {
-        new OrgUnitLoader("ORG-UNIT.json").synch();
     }
 
 

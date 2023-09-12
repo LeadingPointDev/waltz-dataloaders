@@ -1,7 +1,6 @@
 package org.finos.waltz_util.loader;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.finos.waltz_util.common.model.ApplicationKind;
@@ -25,14 +24,14 @@ public abstract class ApplicationOverview {
 
     public abstract Optional<String> description();
 
-
-    public abstract String externalId();
-
-
-    public abstract Optional<String> parentExternalId();
+    // asset_code
+    public abstract String external_id();
 
 
-    public abstract String organisationalUnitExternalId();
+    public abstract Optional<String> parent_external_id();
+
+
+    public abstract String organisational_unit_external_id();
 
 
     @Value.Default
@@ -41,13 +40,13 @@ public abstract class ApplicationOverview {
     }
 
     @Value.Default
-    public String lifecyclePhase() {
+    public String lifecycle_phase() {
         return "ACTIVE";
 
     }
 
     @Value.Default
-    public String overallRating() {
+    public String overall_rating() {
         return "Z";
     }
 
@@ -58,15 +57,15 @@ public abstract class ApplicationOverview {
     }
 
     @Value.Default
-    public String entityLifecycleStatus() {
+    public String entity_lifecycle_status() {
         return "ACTIVE";
     }
 
-    public abstract Optional<Timestamp> plannedRetirementDate();
+    public abstract Optional<Timestamp> planned_retirement_date();
 
-    public abstract Optional<Timestamp> actualRetirementDate();
+    public abstract Optional<Timestamp> actual_retirement_date();
 
-    public abstract Optional<Timestamp> commissionDate();
+    public abstract Optional<Timestamp> commission_date();
 
     public abstract Optional<Boolean> isRemoved();
 
@@ -79,6 +78,6 @@ public abstract class ApplicationOverview {
 
 
 
-    public abstract Optional<Long> orgUnitId();
+    public abstract Optional<Long> organisational_unit_id();
 
 }

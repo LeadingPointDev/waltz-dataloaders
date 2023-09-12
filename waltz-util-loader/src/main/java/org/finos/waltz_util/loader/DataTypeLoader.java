@@ -16,7 +16,6 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
 import static org.finos.waltz_util.schema.Tables.DATA_TYPE;
@@ -39,7 +38,7 @@ public class DataTypeLoader {
 
             Set<DataTypeOverview> existingDTs = getExistingDataTypes(tx);
 
-            //Fallback DT value
+            //Fallback DT value, if waltz changes the Unknown DT, this will need to be updated
             DataTypeOverview unknownDT = ImmutableDataTypeOverview
                     .builder()
                     .code("UNKNOWN")
@@ -61,10 +60,6 @@ public class DataTypeLoader {
                     DataTypeOverview::id,
                     Object::equals
             );
-
-            System.out.println("To Insert: " + diff.otherOnly().size());
-            System.out.println("To Update: " + diff.differingIntersection().size());
-            System.out.println("Depreciated: " + diff.waltzOnly().size());
 
 
             insertNew(tx, diff.otherOnly());
@@ -170,7 +165,7 @@ public class DataTypeLoader {
                 .name(record.getName())
                 .description(Optional.ofNullable(record.getDescription()))
                 .id(record.getId())
-                .parentID(Optional.ofNullable(record.getParentId()))
+                .parent_id(Optional.ofNullable(record.getParentId()))
                 .concrete(record.getConcrete())
                 .unknown(record.getUnknown())
                 .depreciated(record.getDeprecated())
@@ -185,7 +180,7 @@ public class DataTypeLoader {
         record.setName(d.name());
         record.setDescription(d.description().orElse(null));
         record.setId(d.id());
-        record.setParentId(d.parentID().orElse(null));
+        record.setParentId(d.parent_id().orElse(null));
         record.setConcrete(d.concrete());
         record.setUnknown(d.unknown());
         record.setDeprecated(d.depreciated());
@@ -196,8 +191,5 @@ public class DataTypeLoader {
         return IntStream.of(rcs).sum();
     }
 
-    public static void main(String[] args) {
-        new DataTypeLoader("C:\\Data\\Coding Stuff\\Waltz-Loaders\\waltz-util-loader\\src\\main\\resources\\DATA-TYPE.json").synch();
-    }
 
 }

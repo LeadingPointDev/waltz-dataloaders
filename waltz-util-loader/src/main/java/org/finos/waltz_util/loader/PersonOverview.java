@@ -1,7 +1,6 @@
 package org.finos.waltz_util.loader;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
@@ -18,40 +17,40 @@ public abstract class PersonOverview {
     public abstract Optional<Long> id();
 
 
-    public abstract String employeeId(); // fixed name, java tends to avoid underscores in class names and method names
+    public abstract String employee_id(); // fixed name, java tends to avoid underscores in class names and method names
 
 
-    public abstract String displayName();
+    public abstract String display_name();
 
     public abstract String email();
 
 
-    public abstract Optional<String> userPrincipalName();
+    public abstract Optional<String> user_principal_name();
 
 
-    public abstract Optional<String> departmentName();
+    public abstract Optional<String> department_name();
 
 
     public abstract String kind();
 
     @Value.Auxiliary
-    public abstract Optional<String> managerEmail();
+    public abstract Optional<String> manager_email();
 
 
-    public abstract Optional<String> managerEmployeeId();
+    public abstract Optional<String> manager_employee_id();
 
 
     public abstract Optional<String> title();
 
 
-    public abstract Optional<String> mobilePhone();
+    public abstract Optional<String> mobile_phone();
 
 
     public abstract Optional<String> officePhone();
 
-    public abstract String organisationalUnitExternalId();
+    public abstract String organisational_unit_external_id();
 
-    public abstract Optional<Long> organisationalUnitId();
+    public abstract Optional<Long> organisational_unit_id();
 
 
 }

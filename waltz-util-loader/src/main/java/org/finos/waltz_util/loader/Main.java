@@ -1,8 +1,5 @@
 package org.finos.waltz_util.loader;
 
-import java.io.IOException;
-import java.sql.SQLOutput;
-
 public class Main {
 
 
@@ -52,7 +49,6 @@ public class Main {
                     // args will look like
                     // java -jar loader.jar -M PRODUCT <path to Excel file> <path to config file>
                     System.out.println("Loading measurables");
-                    String prefix = "";
                     i++;
                     switch (args[i]) {
                         case "PRODUCT":

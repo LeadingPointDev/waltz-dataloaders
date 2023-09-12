@@ -2,30 +2,22 @@ package org.finos.waltz_util.loader;
 
 import org.finos.waltz_util.common.DIBaseConfiguration;
 import org.finos.waltz_util.common.helper.DiffResult;
-import org.finos.waltz_util.schema.tables.Person;
 import org.finos.waltz_util.schema.tables.records.PersonRecord;
 import org.jooq.DSLContext;
-import org.jooq.ExecuteListener;
-import org.jooq.ExecuteListenerProvider;
 import org.jooq.Record;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
-import static org.finos.waltz_util.schema.Tables.*;
+import static org.finos.waltz_util.schema.Tables.ORGANISATIONAL_UNIT;
+import static org.finos.waltz_util.schema.Tables.PERSON;
 
 
 public class PersonLoader {
@@ -74,10 +66,10 @@ public class PersonLoader {
             desiredPeople = desiredPeople
                     .stream()
                     .map(p -> {
-                        Long id = employeeIDtoID.get(p.employeeId());
+                        Long id = employeeIDtoID.get(p.employee_id());
                         return ImmutablePersonOverview.copyOf(p)
                                 .withId(Optional.ofNullable(id))
-                                .withManagerEmployeeId(p.managerEmployeeId().orElse("0"));
+                                .withManager_employee_id(p.manager_employee_id().orElse("0"));
                     })
                     .collect(Collectors.toSet());
 
@@ -88,7 +80,7 @@ public class PersonLoader {
             DiffResult<PersonOverview> diff = DiffResult.mkDiff(
                     existingPeople,
                     desiredPeople,
-                    PersonOverview::employeeId,
+                    PersonOverview::employee_id,
                     Object::equals);
 
 
@@ -148,19 +140,7 @@ public class PersonLoader {
 
     private void updateRelationships(DSLContext tx,
                                      Collection<PersonOverview> toUpdate) {
-        /**
-         * for all entries, compare with JSON
-         * todo finish this bit
-         */
 
-        /**
-         * 1. get email -> manager ID relationships from DB
-         * 2. load new people from DB to create Existing PersonOverviews
-         * 3. load new people from JSON to create Desired PersonOverviews
-         * 4. compare the two sets of PersonOverviews
-         * 5. update IntersectingDifferent entries
-         * 6. set is_removed for rest
-         */
 
         List<PersonRecord> recordsToUpdate = toUpdate
                 .stream()
@@ -213,7 +193,7 @@ public class PersonLoader {
                 .of(rawOverviews)
                 .collect(Collectors.toMap(
                         PersonOverview::email,
-                        PersonOverview::employeeId));
+                        PersonOverview::employee_id));
 
     }
 
@@ -239,10 +219,10 @@ public class PersonLoader {
 
                     PersonOverview person = ImmutablePersonOverview
                         .copyOf(d)
-                        .withOrganisationalUnitId(orgIdByOrgExtId.getOrDefault(d.organisationalUnitExternalId().toString(), ORPHAN_ORG_UNIT_ID))
+                        .withOrganisational_unit_id(orgIdByOrgExtId.getOrDefault(d.organisational_unit_external_id().toString(), ORPHAN_ORG_UNIT_ID))
                         // this bit is better written the other way around as d.managerEmail may be undefined:
                         // withManagerEmployeeId(emailToEmployeeID.getOrDefault(d.managerEmail().get(), "0")))
-                        .withManagerEmployeeId(d.managerEmployeeId())
+                        .withManager_employee_id(d.manager_employee_id())
                         .withEmail(d.email());
                         return person;
                 })
@@ -255,18 +235,18 @@ public class PersonLoader {
         return ImmutablePersonOverview
                 .builder()
                 .id(personRecord.getId().longValue())
-                .employeeId(personRecord.getEmployeeId())
+                .employee_id(personRecord.getEmployeeId())
                 .email(personRecord.getEmail())
-                .displayName(personRecord.getDisplayName())
+                .display_name(personRecord.getDisplayName())
                 .kind(personRecord.getKind())
-                .managerEmployeeId(personRecord.getManagerEmployeeId())
+                .manager_employee_id(personRecord.getManagerEmployeeId())
                 .title(Optional.ofNullable(personRecord.getTitle()))
-                .userPrincipalName(Optional.ofNullable(personRecord.getUserPrincipalName()))
-                .departmentName(Optional.ofNullable(personRecord.getDepartmentName()))
-                .mobilePhone(Optional.ofNullable(personRecord.getMobilePhone()))
+                .user_principal_name(Optional.ofNullable(personRecord.getUserPrincipalName()))
+                .department_name(Optional.ofNullable(personRecord.getDepartmentName()))
+                .mobile_phone(Optional.ofNullable(personRecord.getMobilePhone()))
                 .officePhone(Optional.ofNullable(personRecord.getOfficePhone()))
-                .organisationalUnitId(personRecord.getOrganisationalUnitId())
-                .organisationalUnitExternalId(r.get(ORGANISATIONAL_UNIT.EXTERNAL_ID))
+                .organisational_unit_id(personRecord.getOrganisationalUnitId())
+                .organisational_unit_external_id(r.get(ORGANISATIONAL_UNIT.EXTERNAL_ID))
                 .build();
     }
 
@@ -275,19 +255,19 @@ public class PersonLoader {
         PersonRecord record = dsl.newRecord(PERSON);
 
         record.setId(domain.id().orElse(null));
-        record.setEmployeeId(domain.employeeId());
-        record.setDisplayName(domain.displayName());
+        record.setEmployeeId(domain.employee_id());
+        record.setDisplayName(domain.display_name());
         record.setEmail(domain.email());
-        record.setDepartmentName(domain.departmentName().orElse(null));
+        record.setDepartmentName(domain.department_name().orElse(null));
         record.setKind(domain.kind());
-        record.setUserPrincipalName(domain.userPrincipalName().orElse(null));
+        record.setUserPrincipalName(domain.user_principal_name().orElse(null));
 
         // sets unmanaged people to 0 on every insert statement where its not specified, as it will be updated on second pass.
-        record.setManagerEmployeeId(domain.managerEmployeeId().orElse("0"));
+        record.setManagerEmployeeId(domain.manager_employee_id().orElse("0"));
         record.setTitle(domain.title().orElse(null));
-        record.setMobilePhone(domain.mobilePhone().orElse(null));
+        record.setMobilePhone(domain.mobile_phone().orElse(null));
         record.setOfficePhone(domain.officePhone().orElse(null));
-        record.setOrganisationalUnitId(domain.organisationalUnitId().orElse(ORPHAN_ORG_UNIT_ID));
+        record.setOrganisationalUnitId(domain.organisational_unit_id().orElse(ORPHAN_ORG_UNIT_ID));
         record.setIsRemoved(false);// we only build records for new and updated people, which means they aren't removed
         return record;
 
@@ -303,7 +283,7 @@ public class PersonLoader {
                 .stream()
                 .collect(Collectors.toMap(
                         PersonOverview::email,
-                        PersonOverview::employeeId));
+                        PersonOverview::employee_id));
     }
 
 
@@ -315,9 +295,5 @@ public class PersonLoader {
         return orgIdByOrgExtId;
     }
 
-
-    public static void main(String[] args) {
-        new PersonLoader("C:\\Data\\Coding Stuff\\Waltz-Loaders\\waltz-util-loader\\src\\main\\resources\\PERSON2.json").synch();
-    }
 
 }

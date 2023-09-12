@@ -3,13 +3,13 @@ package org.finos.waltz_util.loader;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-
-import org.finos.waltz_util.common.helper.DiffResult;
 import org.finos.waltz_util.common.DIBaseConfiguration;
+import org.finos.waltz_util.common.helper.DiffResult;
 import org.finos.waltz_util.schema.tables.records.MeasurableRecord;
 import org.jooq.DSLContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.jooq.Record;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,11 +49,6 @@ public class MeasurablesLoader {
         dsl.transaction(ctx -> {
             DSLContext tx = ctx.dsl();
 
-
-            // each entry has ID and ParentID, these represent relation to each other, but aren't ExternalID's
-
-            // process with external ID's to internal Parent ID's
-            // generate ID on the spot (maybe?)
 
 
 
