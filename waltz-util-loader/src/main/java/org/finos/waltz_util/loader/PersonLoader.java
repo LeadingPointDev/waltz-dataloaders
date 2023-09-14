@@ -179,11 +179,6 @@ public class PersonLoader {
 
     }
 
-    public void peekFile() {
-
-    }
-
-
     private Map<String, String> EmailToEmployeeId() throws IOException {
         //InputStream resourceAsStream = PersonLoader.class.getClassLoader().getResourceAsStream(resource);
 
