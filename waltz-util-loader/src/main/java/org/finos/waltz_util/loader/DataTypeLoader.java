@@ -39,16 +39,9 @@ public class DataTypeLoader {
             Set<DataTypeOverview> existingDTs = getExistingDataTypes(tx);
 
             //Fallback DT value, if waltz changes the Unknown DT, this will need to be updated
-            DataTypeOverview unknownDT = ImmutableDataTypeOverview
-                    .builder()
-                    .code("UNKNOWN")
-                    .name("Unknown")
-                    .description("Unknown")
-                    .id(1L)
-                    .concrete(true)
-                    .unknown(true)
-                    .depreciated(false)
-                    .build();
+            DataTypeOverview unknownDT = generateUnknownDT();
+
+
 
             Set<DataTypeOverview> desiredDTs = loadDTsFromFile();
             desiredDTs.add(unknownDT);
@@ -69,6 +62,19 @@ public class DataTypeLoader {
         });
 
 
+    }
+
+    private DataTypeOverview generateUnknownDT() {
+        return ImmutableDataTypeOverview
+                .builder()
+                .code("UNKNOWN")
+                .name("Unknown")
+                .description("Unknown")
+                .id(1L)
+                .concrete(true)
+                .unknown(true)
+                .depreciated(false)
+                .build();
     }
 
     private void insertNew(DSLContext dsl, Collection<DataTypeOverview> toInsert) {
