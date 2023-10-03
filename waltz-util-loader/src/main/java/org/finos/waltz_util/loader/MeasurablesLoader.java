@@ -214,12 +214,12 @@ public class MeasurablesLoader {
     }
 
     private Long getMaxID(DSLContext dsl){
-        return dsl
+        Long maxID = dsl
                 .select(MEASURABLE.ID.max())
                 .from(MEASURABLE)
                 .fetchOne(MEASURABLE.ID.max());
-
-
+        // if no records exist, return 0L
+        return maxID == null ? 0L : maxID;
     }
 
     private Set<MeasurablesOverview> loadMeasurablesFromFile(Map<String, Long> ExIDtoIDMap) throws IOException {
