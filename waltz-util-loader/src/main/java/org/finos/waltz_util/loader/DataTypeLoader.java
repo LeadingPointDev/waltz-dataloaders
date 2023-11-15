@@ -3,12 +3,10 @@ package org.finos.waltz_util.loader;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import org.finos.waltz_util.common.DIBaseConfiguration;
 import org.finos.waltz_util.common.helper.DiffResult;
 import org.finos.waltz_util.schema.tables.records.DataTypeRecord;
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -20,48 +18,19 @@ import java.util.stream.IntStream;
 import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
 import static org.finos.waltz_util.schema.Tables.DATA_TYPE;
 
-public class DataTypeLoader {
-
-    private final String resource;  // these are initialised at construction, and should not change therefore marked as final
-    private final DSLContext dsl;
-
+public class DataTypeLoader extends Loader<DataTypeOverview> {
     public DataTypeLoader(String resource) {
-        this.resource = resource;
-        AnnotationConfigApplicationContext springContext = new AnnotationConfigApplicationContext(DIBaseConfiguration.class);
-        dsl = springContext.getBean(DSLContext.class);
+        super(resource);
     }
 
 
-    public void synch() {
-        dsl.transaction(ctx -> {
-            DSLContext tx = ctx.dsl();
-
-            Set<DataTypeOverview> existingDTs = getExistingDataTypes(tx);
-
-            //Fallback DT value, if waltz changes the Unknown DT, this will need to be updated
-            DataTypeOverview unknownDT = generateUnknownDT();
-
-
-
-            Set<DataTypeOverview> desiredDTs = loadDTsFromFile();
-            desiredDTs.add(unknownDT);
-
-
-            DiffResult<DataTypeOverview> diff = DiffResult.mkDiff(
-                    existingDTs,
-                    desiredDTs,
-                    DataTypeOverview::id,
-                    Object::equals
-            );
-
-
-            insertNew(tx, diff.otherOnly());
-            updateRelationships(tx, diff.differingIntersection());
-            markDepreciated(tx, diff.waltzOnly());
-
-        });
-
-
+    protected DiffResult<DataTypeOverview> getDiffResults(Set<DataTypeOverview> existingOverviews, Set<DataTypeOverview> desiredOverviews) {
+        return DiffResult.mkDiff(
+                existingOverviews,
+                desiredOverviews,
+                DataTypeOverview::id,
+                Object::equals
+        );
     }
 
     private DataTypeOverview generateUnknownDT() {
@@ -69,7 +38,7 @@ public class DataTypeLoader {
                 .builder()
                 .code("UNKNOWN")
                 .name("Unknown")
-                .description("Unknown")
+                .description("Unknown datatype")
                 .id(1L)
                 .concrete(true)
                 .unknown(true)
@@ -77,7 +46,7 @@ public class DataTypeLoader {
                 .build();
     }
 
-    private void insertNew(DSLContext dsl, Collection<DataTypeOverview> toInsert) {
+    protected void insertNew(DSLContext dsl, Collection<DataTypeOverview> toInsert) {
         List<DataTypeRecord> recordsToInsert = toInsert
                 .stream()
                 .map(d -> toJooqRecord(d))
@@ -88,10 +57,9 @@ public class DataTypeLoader {
                 .execute());
 
         System.out.println("Created: " + recordsCreated);
-
     }
 
-    private void updateRelationships(DSLContext dsl, Collection<DataTypeOverview> toInsert) {
+    protected void updateExisting(DSLContext dsl, Collection<DataTypeOverview> toInsert) {
         List<DataTypeRecord> recordsToUpdate = toInsert
                 .stream()
                 .map(d -> {
@@ -108,13 +76,12 @@ public class DataTypeLoader {
         System.out.println("Updated: " + recordsUpdated);
     }
 
-    private void markDepreciated(DSLContext dsl, Collection<DataTypeOverview> toInsert) {
+    protected void deleteExisting(DSLContext dsl, Collection<DataTypeOverview> toInsert) {
         Set<Long> idsToRemove = toInsert
                 .stream()
                 .filter(overview -> !overview.depreciated())
                 .map(DataTypeOverview::id)
                 .collect(Collectors.toSet());
-
 
         int markedRemoved = dsl
                 .update(DATA_TYPE)
@@ -125,19 +92,18 @@ public class DataTypeLoader {
         System.out.println("Depreciated New: " + markedRemoved);
     }
 
-
-    private Set<DataTypeOverview> getExistingDataTypes(DSLContext dsl) {
+    protected Set<DataTypeOverview> getExistingRecordsAsOverviews(DSLContext dsl) {
         return dsl
                 .select(DATA_TYPE.fields())
                 .from(DATA_TYPE)
                 .fetch()
                 .stream()
-                .map(T -> toDomain(T))
+                .map(T -> toOverview(T))
                 .collect(Collectors.toSet());
 
     }
 
-    private Set<DataTypeOverview> loadDTsFromFile() throws IOException {
+    protected Set<DataTypeOverview> loadFromFile() throws IOException {
         Set<DataTypeOverview> dataTypeOverviews = new HashSet<>();
         ObjectMapper jsonMapper = getJsonMapper();
 
@@ -157,14 +123,20 @@ public class DataTypeLoader {
                 }
             }
         }
-
         return dataTypeOverviews;
     }
 
+    protected void validate(Set<DataTypeOverview> overviews) {
+        // no validation for now
+    }
 
+    protected Set<DataTypeOverview> processOverviews(Set<DataTypeOverview> rawOverviews) {
+        // add logic here
+        rawOverviews.add(generateUnknownDT());
+        return rawOverviews;
+    }
 
-    private DataTypeOverview toDomain(Record r) {
-
+    protected DataTypeOverview toOverview(Record r) {
         DataTypeRecord record = r.into(DATA_TYPE);
         return ImmutableDataTypeOverview.builder()
                 .code(record.getCode())
@@ -179,7 +151,6 @@ public class DataTypeLoader {
 
     }
 
-
     private DataTypeRecord toJooqRecord(DataTypeOverview d) {
         DataTypeRecord record = new DataTypeRecord();
         record.setCode(d.code());
@@ -193,9 +164,7 @@ public class DataTypeLoader {
         return record;
     }
 
-    private static int summarizeResults(int[] rcs) {
+    protected static int summarizeResults(int[] rcs) {
         return IntStream.of(rcs).sum();
     }
-
-
 }

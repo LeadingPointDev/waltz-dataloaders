@@ -1,5 +1,6 @@
 package org.finos.waltz_util.loader;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -17,6 +18,7 @@ import java.util.Optional;
 public abstract class ApplicationOverview {
 
     @Value.Auxiliary
+    @JsonIgnore
     public abstract Optional<Long> id();
 
 
@@ -77,7 +79,7 @@ public abstract class ApplicationOverview {
 
 
 
-
+    @JsonIgnore
     public abstract Optional<Long> organisational_unit_id();
 
 }

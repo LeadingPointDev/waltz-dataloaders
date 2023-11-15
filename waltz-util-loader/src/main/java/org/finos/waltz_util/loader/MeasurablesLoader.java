@@ -3,12 +3,10 @@ package org.finos.waltz_util.loader;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import org.finos.waltz_util.common.DIBaseConfiguration;
 import org.finos.waltz_util.common.helper.DiffResult;
 import org.finos.waltz_util.schema.tables.records.MeasurableRecord;
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -16,74 +14,26 @@ import java.io.InputStream;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
 import static org.finos.waltz_util.schema.Tables.MEASURABLE;
 import static org.finos.waltz_util.schema.Tables.MEASURABLE_CATEGORY;
 
-public class MeasurablesLoader {
-    private final String resource;
-    private final String category;
-    private final DSLContext dsl;
+public class MeasurablesLoader extends Loader<MeasurablesOverview> {
+
+    //private final String category;
     private final Long categoryID;
     private Long maxID;
     private Map<String, Long> ExIDToIDMap;
 
     public MeasurablesLoader(String resource, String category) {
-        AnnotationConfigApplicationContext springContext = new AnnotationConfigApplicationContext(DIBaseConfiguration.class);
-        dsl = springContext.getBean(DSLContext.class);
-
-
-        this.resource = resource;
-        this.category = category;
+        super(resource);
+        //this.category = category;
         this.categoryID = getCategoryID(category, dsl);
-
-
+        this.maxID = getMaxID(dsl);
     }
 
-
-
-
-    public void synch(){
-        dsl.transaction(ctx -> {
-            DSLContext tx = ctx.dsl();
-
-
-
-
-            Set<MeasurablesOverview> existingMeasurables = getExistingMeasurables(tx, categoryID);
-            ExIDToIDMap = getExternalToInternalIDMap(existingMeasurables);
-            maxID = getMaxID(tx);
-
-
-            //todo: Implement Org unit mapping (not expected in Data rn)
-
-            Set<MeasurablesOverview> externalMeasurables = loadMeasurablesFromFile(ExIDToIDMap);
-            Set<MeasurablesOverview> desiredMeasurables = processExternalMeasurables(externalMeasurables);
-
-            DiffResult<MeasurablesOverview> diff = DiffResult.mkDiff(
-                    existingMeasurables,
-                    desiredMeasurables,
-                    MeasurablesOverview::external_id,
-                    Object::equals
-            );
-
-
-
-
-
-
-            insertNew(diff.otherOnly(), tx);
-            updateExisting(diff.differingIntersection(), tx);
-            deleteRemoved(diff.waltzOnly(), tx);
-
-
-
-        });
-    }
-
-    private Set<MeasurablesOverview> processExternalMeasurables(Set<MeasurablesOverview> externalMeasurables){
+    protected Set<MeasurablesOverview> processOverviews(Set<MeasurablesOverview> externalMeasurables) {
         return externalMeasurables
                 .stream()
                 .map(m -> ImmutableMeasurablesOverview.copyOf(m)
@@ -92,9 +42,23 @@ public class MeasurablesLoader {
                 .collect(Collectors.toSet());
     }
 
+    @Override
+    protected DiffResult<MeasurablesOverview> getDiffResults(Set<MeasurablesOverview> existingOverviews, Set<MeasurablesOverview> desiredOverviews) {
+        return DiffResult.mkDiff(
+                existingOverviews,
+                desiredOverviews,
+                MeasurablesOverview::external_id,
+                Object::equals
+        );
+    }
+
+    @Override
+    protected void validate(Set<MeasurablesOverview> overviews) {
+        //todo
+    }
 
 
-    private void insertNew(Collection<MeasurablesOverview> toInsert, DSLContext dsl){
+    protected void insertNew(DSLContext dsl, Collection<MeasurablesOverview> toInsert) {
         List<MeasurableRecord> recordsToInsert = toInsert
                 .stream()
                 .map(m -> {
@@ -113,7 +77,7 @@ public class MeasurablesLoader {
 
     }
 
-    private void updateExisting(Collection<MeasurablesOverview> toUpdate, DSLContext dsl){
+    protected void updateExisting(DSLContext dsl, Collection<MeasurablesOverview> toUpdate) {
         List<MeasurableRecord> recordToUpdate = toUpdate
                 .stream()
                 .map(m -> {
@@ -131,34 +95,27 @@ public class MeasurablesLoader {
 
     }
 
-    private void deleteRemoved(Collection<MeasurablesOverview> toDelete, DSLContext dsl){
-        if (true){
+    protected void deleteExisting(DSLContext dsl, Collection<MeasurablesOverview> toDelete) {
+        if (true) {
             return;
         }
         Integer count = 0;
         // recursively delete children
-        for (MeasurablesOverview m : toDelete){
-            if (m.parent_id().isPresent()){
+        for (MeasurablesOverview m : toDelete) {
+            if (m.parent_id().isPresent()) {
                 count = count + deleteChildren(m.id().get(), dsl);
             }
         }
-
-
-
-
-
         System.out.println("Records Deleted: " + count);
-
-
     }
 
-    private Integer deleteChildren(Long ID, DSLContext dsl){
+    private Integer deleteChildren(Long ID, DSLContext dsl) {
         Integer count = 0;
         List<Long> childIDs = dsl.select(MEASURABLE.ID)
                 .where(MEASURABLE.PARENT_ID.eq(ID))
                 .fetchInto(Long.class);
 
-        for (Long childId : childIDs){
+        for (Long childId : childIDs) {
             count = count + deleteChildren(childId, dsl);
         }
         dsl.deleteFrom(MEASURABLE)
@@ -168,13 +125,10 @@ public class MeasurablesLoader {
         return ++count;
 
 
-
     }
 
 
-
-
-    private MeasurableRecord toJooqRecord(MeasurablesOverview overview){
+    private MeasurableRecord toJooqRecord(MeasurablesOverview overview) {
         MeasurableRecord record = new MeasurableRecord();
         record.setId(overview.id().orElse(null));
         record.setParentId(overview.parent_id().orElse(null));
@@ -194,14 +148,6 @@ public class MeasurablesLoader {
     }
 
 
-
-
-
-
-
-
-
-
     private Map<String, Long> getExternalToInternalIDMap(Set<MeasurablesOverview> measurables) {
         return measurables
                 .stream()
@@ -210,10 +156,10 @@ public class MeasurablesLoader {
                         Collectors.toMap(
                                 MeasurablesOverview::external_id,
                                 m -> m.id().get()
-                ));
+                        ));
     }
 
-    private Long getMaxID(DSLContext dsl){
+    private Long getMaxID(DSLContext dsl) {
         Long maxID = dsl
                 .select(MEASURABLE.ID.max())
                 .from(MEASURABLE)
@@ -222,7 +168,8 @@ public class MeasurablesLoader {
         return maxID == null ? 0L : maxID;
     }
 
-    private Set<MeasurablesOverview> loadMeasurablesFromFile(Map<String, Long> ExIDtoIDMap) throws IOException {
+    protected Set<MeasurablesOverview> loadFromFile() throws IOException {
+        Map<String, Long> ExIDtoIDMap = getExternalToInternalIDMap(getExistingRecordsAsOverviews(dsl));
         Set<MeasurablesOverview> measurables = new HashSet<>();
         ObjectMapper jsonMapper = getJsonMapper();
 
@@ -238,7 +185,7 @@ public class MeasurablesLoader {
                     Long actualID = ExIDtoIDMap.getOrDefault(overview.external_id(), ++maxID);
                     MeasurablesOverview processedOverview = ImmutableMeasurablesOverview
                             .copyOf(overview)
-                                    .withId(actualID);
+                            .withId(actualID);
 
                     // if the External ID isn't in the map, add it
                     if (!ExIDtoIDMap.containsKey(overview.external_id())) {
@@ -259,19 +206,19 @@ public class MeasurablesLoader {
     }
 
 
-    private Set<MeasurablesOverview> getExistingMeasurables(DSLContext dsl, Long catID){
+    protected Set<MeasurablesOverview> getExistingRecordsAsOverviews(DSLContext dsl) {
         return dsl
                 .select(MEASURABLE.fields())
                 .from(MEASURABLE)
-                .where(MEASURABLE.MEASURABLE_CATEGORY_ID.eq(catID))
+                .where(MEASURABLE.MEASURABLE_CATEGORY_ID.eq(categoryID))
                 .fetch()
                 .stream()
-                .map(r -> toDomain(r))
+                .map(r -> toOverview(r))
                 .collect(Collectors.toSet());
 
     }
 
-    private MeasurablesOverview toDomain(Record r){
+    protected MeasurablesOverview toOverview(Record r) {
         MeasurableRecord m = r.into(MEASURABLE);
         return ImmutableMeasurablesOverview.builder()
                 .id(Optional.ofNullable(m.getId()))
@@ -296,12 +243,5 @@ public class MeasurablesLoader {
                 .where(MEASURABLE_CATEGORY.EXTERNAL_ID.eq(category))
                 .fetchOne(MEASURABLE_CATEGORY.ID);
     }
-
-    private static int summarizeResults(int[] rcs) {
-        return IntStream.of(rcs).sum();
-    }
-
-
-
 
 }

@@ -1,13 +1,11 @@
 package org.finos.waltz_util.loader;
 
-import org.finos.waltz_util.common.DIBaseConfiguration;
 import org.finos.waltz_util.common.helper.DiffResult;
 import org.finos.waltz_util.common.model.ApplicationKind;
 import org.finos.waltz_util.common.model.Criticality;
 import org.finos.waltz_util.schema.tables.records.ApplicationRecord;
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -16,7 +14,6 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
@@ -24,56 +21,43 @@ import static org.finos.waltz_util.schema.Tables.APPLICATION;
 import static org.finos.waltz_util.schema.Tables.ORGANISATIONAL_UNIT;
 
 
-public class ApplicationLoader {
+public class ApplicationLoader extends Loader<ApplicationOverview> {
     private final static Long ORPHAN_ORG_UNIT_ID = -1L; // this is a constant, so should be declared as static and uppercased
-    private final String resource;  // these are initialised at construction, and should not change therefore marked as final
-    private final DSLContext dsl;
 
     public ApplicationLoader(String resource) {
-        this.resource = resource;
-        AnnotationConfigApplicationContext springContext = new AnnotationConfigApplicationContext(DIBaseConfiguration.class);
-        dsl = springContext.getBean(DSLContext.class);
+        super(resource);
     }
 
 
-    public void synch() {
-        dsl.transaction(ctx -> {
-            DSLContext tx = ctx.dsl();
-
-
-
-            Set<ApplicationOverview> rawApps = loadPeopleFromFile(getOrgUnitRelations(tx));
-            Set<ApplicationOverview> desiredApps = processApps(rawApps, tx);
-
-
-            Set<ApplicationOverview> existingApps = getExistingPeople(tx);
-
-
-            // json includes
-            // given Asset_code and parent_asset_code
-            DiffResult<ApplicationOverview> diff = DiffResult.mkDiff(
-                    existingApps,
-                    desiredApps,
-                    ApplicationOverview::external_id,
-                    Object::equals);
-
-
-            insertNew(tx, diff.otherOnly());
-            updateRelationships(tx, diff.differingIntersection());
-            markRemoved(tx, diff.waltzOnly());
-        });
-
-
+    protected DiffResult<ApplicationOverview> getDiffResults(Set<ApplicationOverview> existingOverviews, Set<ApplicationOverview> desiredOverviews) {
+        return DiffResult.mkDiff(
+                existingOverviews,
+                desiredOverviews,
+                ApplicationOverview::external_id,
+                Object::equals
+        );
     }
 
-    private Set<ApplicationOverview> processApps(Set<ApplicationOverview> rawApps, DSLContext dsl) {
+    protected void validate(Set<ApplicationOverview> apps) {
+        apps.stream().filter(a -> a.organisational_unit_id().get().equals(ORPHAN_ORG_UNIT_ID)).forEach(a -> System.out.println("Cannot find Org Unit Associated with: " + a.name()));
+        verifyUniqueIdentifier(apps);
+    }
+
+    protected Set<ApplicationOverview> processOverviews(Set<ApplicationOverview> rawApps) {
         Map<String, Long> externalIdtoId = getExternalIdToIdMap(dsl);
+        Map<String, Long> orgIdByOrgExtId = getOrgUnitRelations(dsl);
+
+
         return rawApps
                 .stream()
                 .map(a -> {
                             Long id = externalIdtoId.getOrDefault(a.external_id(), ORPHAN_ORG_UNIT_ID);
                             return ImmutableApplicationOverview.copyOf(a)
-                                    .withId(id);
+                                    .withId(id)
+                                    .withOrganisational_unit_id(orgIdByOrgExtId.getOrDefault(
+                                            a.organisational_unit_external_id(),
+                                            ORPHAN_ORG_UNIT_ID));
+
 
                         }
                 )
@@ -81,7 +65,7 @@ public class ApplicationLoader {
     }
 
 
-    private void insertNew(DSLContext tx, Collection<ApplicationOverview> toInsert) {
+    protected void insertNew(DSLContext tx, Collection<ApplicationOverview> toInsert) {
         List<ApplicationRecord> recordsToInsert = toInsert
                 .stream()
                 .map(a -> {
@@ -103,7 +87,7 @@ public class ApplicationLoader {
 
     }
 
-    private void updateRelationships(DSLContext tx, Collection<ApplicationOverview> toUpdate) {
+    protected void updateExisting(DSLContext tx, Collection<ApplicationOverview> toUpdate) {
         List<ApplicationRecord> recordsToUpdate = toUpdate
                 .stream()
                 .map(a -> {
@@ -120,12 +104,12 @@ public class ApplicationLoader {
         System.out.println("Records Updated: " + numUpdated);
     }
 
-    private void markRemoved(DSLContext tx, Collection<ApplicationOverview> toRemove) {
+    protected void deleteExisting(DSLContext tx, Collection<ApplicationOverview> toRemove) {
         Set<String> assetCodesToRemove = toRemove
                 .stream()
 
                 .filter(a -> {
-                    if (a.isRemoved().isPresent()){
+                    if (a.isRemoved().isPresent()) {
                         return !a.isRemoved().get();
                     }
                     return false;
@@ -152,7 +136,7 @@ public class ApplicationLoader {
                 .fetchMap(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID);
     }
 
-    private Set<ApplicationOverview> loadPeopleFromFile(Map<String, Long> orgIdByOrgExtId) throws IOException {
+    protected Set<ApplicationOverview> loadFromFile() throws IOException {
 
         //InputStream resourceAsStream = ApplicationLoader.class.getClassLoader().getResourceAsStream(resource);
 
@@ -163,16 +147,13 @@ public class ApplicationLoader {
         return Stream
                 .of(rawOverviews)
                 .map(a -> ImmutableApplicationOverview
-                        .copyOf(a)
-                        .withOrganisational_unit_id(orgIdByOrgExtId.getOrDefault(
-                                a.organisational_unit_external_id(),
-                                ORPHAN_ORG_UNIT_ID)))
-
+                        .copyOf(a))
                 .collect(Collectors.toSet());
     }
 
 
-    private Set<ApplicationOverview> getExistingPeople(DSLContext tx) {
+    protected Set<ApplicationOverview> getExistingRecordsAsOverviews(DSLContext tx) {
+        // todo: Fix bug with failing to fetch users if ORGID is missing
         Set<ApplicationOverview> existingPeople = tx
                 .select(APPLICATION.fields())
                 .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
@@ -181,7 +162,7 @@ public class ApplicationLoader {
                 .on(ORGANISATIONAL_UNIT.ID.eq(APPLICATION.ORGANISATIONAL_UNIT_ID))
                 .fetch()
                 .stream()
-                .map(r -> toDomain(r))
+                .map(r -> toOverview(r))
                 .collect(Collectors.toSet());
 
         return existingPeople;
@@ -196,7 +177,7 @@ public class ApplicationLoader {
                 .fetchMap(APPLICATION.ASSET_CODE, APPLICATION.ID);
     }
 
-    private ApplicationOverview toDomain(Record r) {
+    protected ApplicationOverview toOverview(Record r) {
         ApplicationRecord app = r.into(APPLICATION);
         //Map<String, Long> ExtOUIDToOUID = getOrgUnitRelations(dsl);
         return ImmutableApplicationOverview
@@ -244,8 +225,17 @@ public class ApplicationLoader {
     }
 
 
-    private static int summarizeResults(int[] rcs) {
-        return IntStream.of(rcs).sum();
+    private void verifyUniqueIdentifier(Set<ApplicationOverview> apps) {
+        // check if all values of propertyName are unique
+        // if not, return false, or error?
+
+        // compile all of "propertyName" properties to a Set, check against Len of apps
+        Set<String> propertySet = apps.stream().map(a -> a.external_id()).collect(Collectors.toSet());
+        if (propertySet.size() != apps.size()) {
+            System.out.println("Duplicate Asset Codes found");
+        }
+
+
     }
 
 }

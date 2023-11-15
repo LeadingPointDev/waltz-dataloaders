@@ -1,5 +1,7 @@
 package org.finos.waltz_util.loader;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
@@ -9,8 +11,10 @@ import java.util.Optional;
 @Value.Immutable
 @JsonSerialize(as = ImmutableMeasurablesOverview.class)
 @JsonDeserialize(as = ImmutableMeasurablesOverview.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class MeasurablesOverview {
     @Value.Auxiliary
+    @JsonIgnore
     public abstract Optional<Long> id();
     public abstract Optional<Long> parent_id();
     public abstract String external_id();
@@ -39,6 +43,7 @@ public abstract class MeasurablesOverview {
 
     public abstract Optional<String> organisational_unit_external_id();
 
+    @JsonIgnore
     public abstract Optional<Long> organisational_unit_id();
 
     @Value.Default //todo: ensure position default is correct

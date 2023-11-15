@@ -13,34 +13,26 @@ public class Main {
 
                 case "-A":
                     System.out.println("Loading applications");
-                    ExcelToJSON appConverter = new ExcelToJSON(args[i + 1], args[i + 2]);
-                    String appJson = appConverter.convert();
-                    ApplicationLoader al = new ApplicationLoader(appJson);
+                    ApplicationLoader al = new ApplicationLoader(args[i + 1]);
                     al.synch();
-                    i = i + 2;
+                    i = i + 1;
                     break;
                 case "-P":
                     System.out.println("Loading people");
-                    ExcelToJSON peopleConverter = new ExcelToJSON(args[i + 1], args[i + 2]);
-                    String peopleJson = peopleConverter.convert();
-
-                    PersonLoader pl = new PersonLoader(peopleJson);
+                    PersonLoader pl = new PersonLoader(args[i + 1]);
                     pl.synch();
-                    i = i + 2;
+                    i = i + 1;
                     break;
                 case "-D":
                     System.out.println("Loading data types");
-                    ExcelToJSON dtConverter = new ExcelToJSON(args[i + 1], args[i + 2]);
-                    String dtJson = dtConverter.convert();
-                    DataTypeLoader dtl = new DataTypeLoader(dtJson);
+                    DataTypeLoader dtl = new DataTypeLoader(args[i + 1]);
                     dtl.synch();
                     i = i + 2;
                     break;
                 case "-O":
                     System.out.println("Loading org units");
-                    ExcelToJSON ouConverter = new ExcelToJSON(args[i + 1], args[i + 2]);
-                    String ouJson = ouConverter.convert();
-                    OrgUnitLoader ol = new OrgUnitLoader(ouJson);
+
+                    OrgUnitLoader ol = new OrgUnitLoader(args[i + 1]);
                     ol.synch();
                     i = i + 2;
                     break;
@@ -67,11 +59,9 @@ public class Main {
                         throw new IllegalArgumentException("Measurable category not recognised");
                     }
                     String selector = args[i];
-                    ExcelToJSON mConverter = new ExcelToJSON(args[i + 1], args[i + 2]);
-                    String mJson = mConverter.convert();
-                    MeasurablesLoader ml = new MeasurablesLoader(mJson, selector);
+                    MeasurablesLoader ml = new MeasurablesLoader(args[i+1], selector);
                     ml.synch();
-                    i = i + 2;
+                    i = i + 1;
                     break;
 
 

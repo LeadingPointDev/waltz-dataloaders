@@ -1,5 +1,6 @@
 package org.finos.waltz_util.loader;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
@@ -24,6 +25,7 @@ public abstract class OrgUnitOverview {
 
     public abstract Optional<String> description();
 
+    @JsonIgnore
     public abstract Optional<Long> parent_id();
 
 
@@ -31,6 +33,7 @@ public abstract class OrgUnitOverview {
     public abstract Optional<Timestamp> created_at();
 
     @Value.Auxiliary
+    @JsonIgnore
     @Value.Default
     public Timestamp last_updated_at() {
         return new Timestamp(System.currentTimeMillis());

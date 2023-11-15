@@ -1,11 +1,9 @@
 package org.finos.waltz_util.loader;
 
-import org.finos.waltz_util.common.DIBaseConfiguration;
 import org.finos.waltz_util.common.helper.DiffResult;
 import org.finos.waltz_util.schema.tables.records.OrganisationalUnitRecord;
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -13,68 +11,55 @@ import java.io.InputStream;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
 import static org.finos.waltz_util.schema.Tables.ORGANISATIONAL_UNIT;
 
-public class OrgUnitLoader {
+public class OrgUnitLoader extends Loader<OrgUnitOverview>{
 
-    private final String resource;
-    private final DSLContext dsl;
     private Long maxId = 0L;
 
     public OrgUnitLoader(String resource) {
-        this.resource = resource;
-        AnnotationConfigApplicationContext springContext = new AnnotationConfigApplicationContext(DIBaseConfiguration.class);
-        dsl = springContext.getBean(DSLContext.class);
+        super(resource);
     }
 
-    public void synch() {
-        dsl.transaction(ctx -> {
-            DSLContext tx = ctx.dsl();
 
-
-            Set<OrgUnitOverview> existingOUs = getExistingOrgUnits(tx);
-            maxId = existingOUs.stream().map(OrgUnitOverview::id).max(Long::compareTo).orElse(0L);
-            Set<OrgUnitOverview> rawOUs = loadDesiredOUs(tx);
-
-            Map<String, Long> externalIdToId = mapExternalIDs(existingOUs, rawOUs);
-            // go through desiredOUs and set ID's where needed
-
-            Set<OrgUnitOverview> desiredOUs = processOUs(rawOUs, externalIdToId);
-            desiredOUs.add(createOrphanOrg());
-
-
-
-
-            DiffResult<OrgUnitOverview> diff = DiffResult.mkDiff(
-                    existingOUs,
-                    desiredOUs,
-                    OrgUnitOverview::external_id,
-                    Object::equals
-            );
-
-
-            insertNew(diff.otherOnly(), tx);
-            updateExisting(diff.differingIntersection(), tx);
-            deleteRemoved(diff.waltzOnly(), tx);
-
-
-
-
-        });
+    @Override
+    protected DiffResult<OrgUnitOverview> getDiffResults(Set<OrgUnitOverview> existingOverviews, Set<OrgUnitOverview> desiredOverviews) {
+        return DiffResult.mkDiff(
+                existingOverviews,
+                desiredOverviews,
+                OrgUnitOverview::external_id,
+                Object::equals
+        );
     }
 
-    private Set<OrgUnitOverview> processOUs(Set<OrgUnitOverview> rawOUs, Map<String, Long> externalIdToId) {
-        return rawOUs
+    private Long getMaxId(Set<OrgUnitOverview> existingOverviews){
+        return existingOverviews.stream().map(OrgUnitOverview::id).max(Long::compareTo).orElse(0L);
+    }
+
+    protected void validate(Set<OrgUnitOverview> overviews) {
+        //todo
+    }
+
+    protected Set<OrgUnitOverview> processOverviews(Set<OrgUnitOverview> rawOUs) {
+        Map<String, Long> externalIdToId;
+        try {
+            externalIdToId = externalIDtoIDMap(dsl);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        Set<OrgUnitOverview> desiredOUs = rawOUs
                 .stream()
                 .map(o -> ImmutableOrgUnitOverview.copyOf(o)
                         .withId(externalIdToId.get(o.external_id()))
                         .withParent_id(Optional.ofNullable(o.parent_external_id().map(externalIdToId::get).orElse(null))))
                 .collect(Collectors.toSet());
-
+        desiredOUs.add(createOrphanOrg());
+        return desiredOUs;
     }
 
     private OrgUnitOverview createOrphanOrg() {
@@ -92,7 +77,7 @@ public class OrgUnitLoader {
                 .build();
     }
 
-    private void insertNew(Collection<OrgUnitOverview> toInsert, DSLContext dsl) {
+    protected void insertNew( DSLContext dsl, Collection<OrgUnitOverview> toInsert) {
         List<OrganisationalUnitRecord> recordsToInsert = toInsert
                 .stream()
                 .map(o -> {
@@ -108,7 +93,7 @@ public class OrgUnitLoader {
 
     }
 
-    private void updateExisting(Collection<OrgUnitOverview> toUpdate, DSLContext dsl) {
+    protected void updateExisting(DSLContext dsl ,Collection<OrgUnitOverview> toUpdate) {
         List<OrganisationalUnitRecord> recordsToUpdate = toUpdate
                 .stream()
                 .map(o -> {
@@ -125,7 +110,7 @@ public class OrgUnitLoader {
         System.out.println("Records Updated: " + numUpdated);
     }
 
-    private void deleteRemoved(Collection<OrgUnitOverview> toDelete, DSLContext dsl) {
+    protected void deleteExisting(DSLContext dsl, Collection<OrgUnitOverview> toDelete ) {
         List<Long> idsToRemove = toDelete
                 .stream()
                 .map(OrgUnitOverview::id)
@@ -156,18 +141,20 @@ public class OrgUnitLoader {
 
     }
 
-    private Set<OrgUnitOverview> getExistingOrgUnits(DSLContext dsl) {
-        return dsl
+    protected Set<OrgUnitOverview> getExistingRecordsAsOverviews(DSLContext dsl) {
+        Set<OrgUnitOverview> existingOUs = dsl
                 .select(ORGANISATIONAL_UNIT.fields())
                 .from(ORGANISATIONAL_UNIT)
                 .fetch()
                 .stream()
-                .map(o -> toDomain(o))
+                .map(o -> toOverview(o))
                 .collect(Collectors.toSet());
+        this.maxId = getMaxId(existingOUs);
+        return existingOUs;
 
     }
 
-    private Set<OrgUnitOverview> loadDesiredOUs(DSLContext dsl) throws IOException {
+    protected Set<OrgUnitOverview> loadFromFile() throws IOException {
 
         InputStream resourceAsStream = new FileInputStream(resource);
         OrgUnitOverview[] rawOverviews = getJsonMapper().readValue(resourceAsStream, OrgUnitOverview[].class);
@@ -197,7 +184,7 @@ public class OrgUnitLoader {
     }
 
 
-    private OrgUnitOverview toDomain(Record r) {
+    protected OrgUnitOverview toOverview(Record r) {
         OrganisationalUnitRecord record = r.into(ORGANISATIONAL_UNIT);
         return ImmutableOrgUnitOverview.builder()
                 .name(record.getName())
@@ -252,13 +239,5 @@ public class OrgUnitLoader {
                 .flatMap(Collection::stream)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a));
 
-
     }
-
-
-    private static int summarizeResults(int[] rcs) {
-        return IntStream.of(rcs).sum();
-    }
-
-
 }

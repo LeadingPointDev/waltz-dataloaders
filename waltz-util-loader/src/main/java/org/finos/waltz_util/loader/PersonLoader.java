@@ -57,7 +57,7 @@ public class PersonLoader {
 
 
 
-
+            // todo: cleanup and put overview processing inside function.
 
             Set<PersonOverview> desiredPeople = loadPeopleFromFile(orgIdByOrgExtId);
             //
