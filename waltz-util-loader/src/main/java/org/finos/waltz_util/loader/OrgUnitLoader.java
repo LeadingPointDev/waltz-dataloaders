@@ -46,7 +46,7 @@ public class OrgUnitLoader extends Loader<OrgUnitOverview>{
     protected Set<OrgUnitOverview> processOverviews(Set<OrgUnitOverview> rawOUs) {
         Map<String, Long> externalIdToId;
         try {
-            externalIdToId = externalIDtoIDMap(dsl);
+            externalIdToId = externalIDtoIDMap(dsl, rawOUs.toArray(new OrgUnitOverview[rawOUs.size()]));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -160,13 +160,13 @@ public class OrgUnitLoader extends Loader<OrgUnitOverview>{
         OrgUnitOverview[] rawOverviews = getJsonMapper().readValue(resourceAsStream, OrgUnitOverview[].class);
 
 
-        Map<String, Long> externalIdToId = externalIDtoIDMap(dsl);
+        Map<String, Long> externalIdToId = externalIDtoIDMap(dsl, new OrgUnitOverview[0]);
 
 
         Set<OrgUnitOverview> desiredOUs = Stream
                 .of(rawOverviews)
                 .map(o -> {
-                    maxId = maxId + 20;
+                    this.maxId = this.maxId + 20;
                     ImmutableOrgUnitOverview overview = ImmutableOrgUnitOverview
                             .copyOf(o)
                             .withParent_id(Optional.ofNullable(o.parent_external_id())
@@ -220,19 +220,16 @@ public class OrgUnitLoader extends Loader<OrgUnitOverview>{
     }
 
 
-    public Map<String, Long> externalIDtoIDMap(DSLContext dsl) throws IOException {
+    public Map<String, Long> externalIDtoIDMap(DSLContext dsl, OrgUnitOverview[] rawOverviews ) throws IOException {
         Map<String, Long> internalMap = dsl.select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
                 .from(ORGANISATIONAL_UNIT)
                 .fetchMap(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID);
 
-
-        InputStream resourceAsStream = new FileInputStream(resource);
-        OrgUnitOverview[] rawOverviews = getJsonMapper().readValue(resourceAsStream, OrgUnitOverview[].class);
         Map<String, Long> externalMap = Stream
                 .of(rawOverviews)
                 .collect(Collectors.toMap(OrgUnitOverview::external_id, OrgUnitOverview::id));
 
-
+        // map the two maps together and prioritize the internal IDs
         return Stream
                 .of(internalMap, externalMap)
                 .map(Map::entrySet)
