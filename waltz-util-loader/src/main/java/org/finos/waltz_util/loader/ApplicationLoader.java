@@ -192,6 +192,7 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
                 .lifecycle_phase(app.getLifecyclePhase())
                 .parent_external_id(Optional.ofNullable(app.getParentAssetCode()))
                 .overall_rating(app.getOverallRating())
+                .provenance(app.getProvenance())
                 .criticality(Criticality.valueOf(app.getBusinessCriticality()))
                 .isRemoved(app.getIsRemoved())
                 .entity_lifecycle_status(app.getEntityLifecycleStatus())
@@ -216,7 +217,7 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
         record.setLifecyclePhase(app.lifecycle_phase());
         record.setParentAssetCode(app.parent_external_id().orElse(null));
         record.setOverallRating(app.overall_rating());
-        record.setProvenance("waltz-dataloaders");
+        record.setProvenance(app.provenance());
         record.setBusinessCriticality(app.criticality().name());
         record.setIsRemoved(false);
         return record;
