@@ -23,6 +23,10 @@ public abstract class Loader<T> {
         dsl = springContext.getBean(DSLContext.class);
     }
 
+    public Loader() {
+        throw new UnsupportedOperationException("This constructor is not supported");
+    }
+
 
     //#todo check if this is even needed
     public interface Identifier{

@@ -63,6 +63,13 @@ public class Main {
                     ml.synch();
                     i = i + 1;
                     break;
+                case "-L":
+                    System.out.println("Loading logical flows");
+                    LogicalFlowLoader lfl = new LogicalFlowLoader(args[i + 1]);
+                    lfl.synch();
+                    i = i + 1;
+                    break;
+
 
 
                 default:

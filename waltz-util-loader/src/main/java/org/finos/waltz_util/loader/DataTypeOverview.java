@@ -1,6 +1,7 @@
 package org.finos.waltz_util.loader;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
@@ -11,6 +12,9 @@ import java.util.Optional;
 @JsonSerialize(as = ImmutableDataTypeOverview.class)
 @JsonDeserialize(as = ImmutableDataTypeOverview.class)
 public abstract class DataTypeOverview {
+
+    @Value.Auxiliary
+    @JsonIgnore
     public abstract Long id();
 
     public abstract String code();
