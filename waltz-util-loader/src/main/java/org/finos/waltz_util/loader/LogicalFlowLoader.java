@@ -21,7 +21,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
-import static org.finos.waltz_util.schema.Tables.*;
+import static org.finos.waltz_util.schema.Tables.APPLICATION;
+import static org.finos.waltz_util.schema.Tables.LOGICAL_FLOW;
 
 
 @Value.Immutable
@@ -46,7 +47,6 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
         System.out.printf("\u001B[31m WARNING: This loader will delete all existing logical flows and replace them with the data from %s%n" + ANSI_RESET, resource);
         // clear the logical flow table
         dsl.delete(LOGICAL_FLOW).execute();
-        dsl.delete(LOGICAL_FLOW_DECORATOR).execute();
 
     }
 
@@ -95,6 +95,12 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
         System.out.println(applicationNameToIDMap);
 
         Set<LogicalFlowOverview> processedOverviews = new HashSet<>();
+
+
+
+        rawOverviews = rawOverviews.stream()
+                .filter(o -> o.target_entity_name().orElse("").equals("LPL_DIS_CONTROLLER"))
+                .collect(Collectors.toSet());
 
 
 
