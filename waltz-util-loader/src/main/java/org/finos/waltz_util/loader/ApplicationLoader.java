@@ -59,7 +59,7 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
                             return ImmutableApplicationOverview.copyOf(a)
                                     .withId(id)
                                     .withOrganisational_unit_id(orgIdByOrgExtId.getOrDefault(
-                                            a.organisational_unit_external_id(),
+                                            a.organisational_unit_name(),
                                             ORPHAN_ORG_UNIT_ID));
 
 
@@ -135,9 +135,9 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
 
     private Map<String, Long> getOrgUnitRelations(DSLContext tx) {
         return tx
-                .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
+                .select(ORGANISATIONAL_UNIT.NAME, ORGANISATIONAL_UNIT.ID)
                 .from(ORGANISATIONAL_UNIT)
-                .fetchMap(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID);
+                .fetchMap(ORGANISATIONAL_UNIT.NAME, ORGANISATIONAL_UNIT.ID);
     }
 
     protected Set<ApplicationOverview> loadFromFile() throws IOException {
@@ -188,7 +188,7 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
                 .builder()
                 .id(app.getId().longValue())
                 .external_id(app.getAssetCode())
-                .organisational_unit_external_id(r.get(ORGANISATIONAL_UNIT.EXTERNAL_ID))
+                .organisational_unit_name(r.get(ORGANISATIONAL_UNIT.NAME))
                 .organisational_unit_id(app.getOrganisationalUnitId())
                 .name(app.getName())
                 .description(app.getDescription())

@@ -33,7 +33,7 @@ public abstract class ApplicationOverview {
     public abstract Optional<String> parent_external_id();
 
 
-    public abstract String organisational_unit_external_id();
+    public abstract String organisational_unit_name();
 
 
     @Value.Default
