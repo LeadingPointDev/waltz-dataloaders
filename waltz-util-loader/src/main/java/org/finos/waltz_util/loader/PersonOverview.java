@@ -50,7 +50,7 @@ public abstract class PersonOverview {
 
     public abstract Optional<String> officePhone();
 
-    public abstract String organisational_unit_external_id();
+    public abstract String organisational_unit_name();
 
     @JsonIgnore
     public abstract Optional<Long> organisational_unit_id();
