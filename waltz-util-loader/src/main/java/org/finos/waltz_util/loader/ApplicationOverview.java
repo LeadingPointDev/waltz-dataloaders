@@ -27,10 +27,10 @@ public abstract class ApplicationOverview {
     public abstract Optional<String> description();
 
     // asset_code
-    public abstract String external_id();
+    public abstract String asset_code();
 
 
-    public abstract Optional<String> parent_external_id();
+    public abstract Optional<String> parent_asset_code();
 
 
     public abstract String organisational_unit_name();
@@ -54,7 +54,7 @@ public abstract class ApplicationOverview {
 
 
     @Value.Default
-    public Criticality criticality() {
+    public Criticality business_criticality() {
         return Criticality.MEDIUM;
     }
 
