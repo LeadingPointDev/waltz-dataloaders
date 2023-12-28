@@ -5,6 +5,7 @@ import org.finos.waltz_util.common.model.ApplicationKind;
 import org.finos.waltz_util.common.model.Criticality;
 import org.finos.waltz_util.schema.tables.records.ApplicationRecord;
 import org.jooq.DSLContext;
+import static org.jooq.impl.DSL.*;
 import org.jooq.Record;
 
 import java.io.FileInputStream;
@@ -37,7 +38,7 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
         return DiffResult.mkDiff(
                 existingOverviews,
                 desiredOverviews,
-                ApplicationOverview::external_id,
+                ApplicationOverview::asset_code,
                 Object::equals
         );
     }
@@ -55,7 +56,7 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
         return rawApps
                 .stream()
                 .map(a -> {
-                            Long id = externalIdtoId.getOrDefault(a.external_id(), ORPHAN_ORG_UNIT_ID);
+                            Long id = externalIdtoId.getOrDefault(a.asset_code(), ORPHAN_ORG_UNIT_ID);
                             return ImmutableApplicationOverview.copyOf(a)
                                     .withId(id)
                                     .withOrganisational_unit_id(orgIdByOrgExtId.getOrDefault(
@@ -118,7 +119,7 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
                     }
                     return false;
                 })
-                .map(ApplicationOverview::external_id)
+                .map(ApplicationOverview::asset_code)
                 .collect(Collectors.toSet());
 
 
@@ -157,19 +158,21 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
 
 
     protected Set<ApplicationOverview> getExistingRecordsAsOverviews(DSLContext tx) {
-        // todo: Fix bug with failing to fetch users if ORGID is missing
-        Set<ApplicationOverview> existingPeople = tx
+        // todo: Fix bug with failing to fetch applications if ORGID is missing
+        Set<ApplicationOverview> existingApplications = tx
                 .select(APPLICATION.fields())
-                .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
+                .select(coalesce(ORGANISATIONAL_UNIT.EXTERNAL_ID,"ORPHAN").as("ORGANISATIONAL_UNIT.EXTERNAL_ID"),
+                        coalesce(ORGANISATIONAL_UNIT.ID,-1L).as("ORGANISATIONAL_UNIT.ID"),
+                        coalesce(ORGANISATIONAL_UNIT.NAME,"Orphan Organisation").as("ORGNAME"))
                 .from(APPLICATION)
-                .innerJoin(ORGANISATIONAL_UNIT)
+                .leftJoin(ORGANISATIONAL_UNIT)
                 .on(ORGANISATIONAL_UNIT.ID.eq(APPLICATION.ORGANISATIONAL_UNIT_ID))
                 .fetch()
                 .stream()
                 .map(r -> toOverview(r))
                 .collect(Collectors.toSet());
 
-        return existingPeople;
+        return existingApplications;
 
 
     }
@@ -187,17 +190,17 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
         return ImmutableApplicationOverview
                 .builder()
                 .id(app.getId().longValue())
-                .external_id(app.getAssetCode())
-                .organisational_unit_name(r.get(ORGANISATIONAL_UNIT.NAME))
+                .asset_code(app.getAssetCode())
+                .organisational_unit_name((String) r.get("ORGNAME"))
                 .organisational_unit_id(app.getOrganisationalUnitId())
                 .name(app.getName())
                 .description(app.getDescription())
                 .kind(ApplicationKind.valueOf(app.getKind()))
                 .lifecycle_phase(app.getLifecyclePhase())
-                .parent_external_id(Optional.ofNullable(app.getParentAssetCode()))
+                .parent_asset_code(Optional.ofNullable(app.getParentAssetCode()))
                 .overall_rating(app.getOverallRating())
                 .provenance(app.getProvenance())
-                .criticality(Criticality.valueOf(app.getBusinessCriticality()))
+                .business_criticality(Criticality.valueOf(app.getBusinessCriticality()))
                 .isRemoved(app.getIsRemoved())
                 .entity_lifecycle_status(app.getEntityLifecycleStatus())
                 .planned_retirement_date(Optional.ofNullable(app.getPlannedRetirementDate()))
@@ -213,16 +216,16 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
         record.setId(app.id().orElse(null));
         record.setName(app.name());
         record.setDescription(app.description().orElse(null));
-        record.setAssetCode(app.external_id());
+        record.setAssetCode(app.asset_code());
         record.setCreatedAt(app.commission_date().orElse(Timestamp.valueOf(LocalDateTime.now())));
         record.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
         record.setOrganisationalUnitId(app.organisational_unit_id().orElseThrow(() -> new IllegalArgumentException("No org unit id")));
         record.setKind(app.kind().name());
         record.setLifecyclePhase(app.lifecycle_phase());
-        record.setParentAssetCode(app.parent_external_id().orElse(null));
+        record.setParentAssetCode(app.parent_asset_code().orElse(null));
         record.setOverallRating(app.overall_rating());
         record.setProvenance(app.provenance());
-        record.setBusinessCriticality(app.criticality().name());
+        record.setBusinessCriticality(app.business_criticality().name());
         record.setIsRemoved(false);
         return record;
 
@@ -235,7 +238,7 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
         // if not, return false, or error?
 
         // compile all of "propertyName" properties to a Set, check against Len of apps
-        Set<String> propertySet = apps.stream().map(a -> a.external_id()).collect(Collectors.toSet());
+        Set<String> propertySet = apps.stream().map(a -> a.asset_code()).collect(Collectors.toSet());
         if (propertySet.size() != apps.size()) {
             System.out.println("Duplicate Asset Codes found");
         }
