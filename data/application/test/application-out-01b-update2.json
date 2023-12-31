@@ -1,0 +1,18 @@
+[
+{"asset_code":"111111",
+"kind":"CUSTOMISED",
+"name":"Application001",
+"provenance":"TESTCASE",
+"description":"Description for an app called Application001", 
+"lifecycle_phase":"PRODUCTION",
+"organisational_unit_name":"Main Parent Org Unit",
+"v":"MEDIUM" },
+{"asset_code":"222222",
+"kind":"CUSTOMISED",
+"name":"Application002",
+"provenance":"TESTCASE",
+"description":"Description for an app called Application002", 
+"lifecycle_phase":"PRODUCTION",
+"organisational_unit_name":"Main Parent Org Unit",
+"business_criticality":"HIGH" }
+]
