@@ -218,7 +218,7 @@ public class PersonLoader {
 
                     PersonOverview person = ImmutablePersonOverview
                         .copyOf(d)
-                        .withOrganisational_unit_id(orgIdByOrgExtId.getOrDefault(d.organisational_unit_name().toString(), ORPHAN_ORG_UNIT_ID))
+                        .withOrganisational_unit_id(orgIdByOrgExtId.getOrDefault(d.organisational_unit_external_id().toString(), ORPHAN_ORG_UNIT_ID))
                         // this bit is better written the other way around as d.managerEmail may be undefined:
                         // withManagerEmployeeId(emailToEmployeeID.getOrDefault(d.managerEmail().get(), "0")))
                         .withManager_employee_id(d.manager_employee_id())
@@ -245,7 +245,7 @@ public class PersonLoader {
                 .mobile_phone(Optional.ofNullable(personRecord.getMobilePhone()))
                 .officePhone(Optional.ofNullable(personRecord.getOfficePhone()))
                 .organisational_unit_id(personRecord.getOrganisationalUnitId())
-                .organisational_unit_name(r.get(ORGANISATIONAL_UNIT.NAME))
+                .organisational_unit_external_id(r.get(ORGANISATIONAL_UNIT.EXTERNAL_ID))
                 .build();
     }
 

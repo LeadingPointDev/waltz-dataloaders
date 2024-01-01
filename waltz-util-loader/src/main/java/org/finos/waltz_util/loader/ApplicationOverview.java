@@ -33,7 +33,7 @@ public abstract class ApplicationOverview {
     public abstract Optional<String> parent_asset_code();
 
 
-    public abstract String organisational_unit_name();
+    public abstract String organisational_unit_external_id();
 
 
     @Value.Default

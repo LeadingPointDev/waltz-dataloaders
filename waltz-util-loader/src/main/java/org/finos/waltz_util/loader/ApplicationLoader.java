@@ -60,7 +60,7 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
                             return ImmutableApplicationOverview.copyOf(a)
                                     .withId(id)
                                     .withOrganisational_unit_id(orgIdByOrgExtId.getOrDefault(
-                                            a.organisational_unit_name(),
+                                            a.organisational_unit_external_id(),
                                             ORPHAN_ORG_UNIT_ID));
 
 
@@ -136,9 +136,9 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
 
     private Map<String, Long> getOrgUnitRelations(DSLContext tx) {
         return tx
-                .select(ORGANISATIONAL_UNIT.NAME, ORGANISATIONAL_UNIT.ID)
+                .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
                 .from(ORGANISATIONAL_UNIT)
-                .fetchMap(ORGANISATIONAL_UNIT.NAME, ORGANISATIONAL_UNIT.ID);
+                .fetchMap(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID);
     }
 
     protected Set<ApplicationOverview> loadFromFile() throws IOException {
@@ -161,9 +161,9 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
         // todo: Fix bug with failing to fetch applications if ORGID is missing
         Set<ApplicationOverview> existingApplications = tx
                 .select(APPLICATION.fields())
-                .select(coalesce(ORGANISATIONAL_UNIT.EXTERNAL_ID,"ORPHAN").as("ORGANISATIONAL_UNIT.EXTERNAL_ID"),
-                        coalesce(ORGANISATIONAL_UNIT.ID,-1L).as("ORGANISATIONAL_UNIT.ID"),
-                        coalesce(ORGANISATIONAL_UNIT.NAME,"Orphan Organisation").as("ORGNAME"))
+                .select(coalesce(ORGANISATIONAL_UNIT.EXTERNAL_ID,"ORPHAN").as("ORG_EXTERNAL_ID"),
+                        coalesce(ORGANISATIONAL_UNIT.ID,-1L).as("ORG_ID"),
+                        coalesce(ORGANISATIONAL_UNIT.NAME,"Orphan Organisation").as("ORG_NAME"))
                 .from(APPLICATION)
                 .leftJoin(ORGANISATIONAL_UNIT)
                 .on(ORGANISATIONAL_UNIT.ID.eq(APPLICATION.ORGANISATIONAL_UNIT_ID))
@@ -191,7 +191,7 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
                 .builder()
                 .id(app.getId().longValue())
                 .asset_code(app.getAssetCode())
-                .organisational_unit_name((String) r.get("ORGNAME"))
+                .organisational_unit_external_id((String) r.get("ORG_EXTERNAL_ID"))
                 .organisational_unit_id(app.getOrganisationalUnitId())
                 .name(app.getName())
                 .description(app.getDescription())
