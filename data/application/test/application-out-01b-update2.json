@@ -5,7 +5,7 @@
 "provenance":"TESTCASE",
 "description":"Description for an app called Application001", 
 "lifecycle_phase":"PRODUCTION",
-"organisational_unit_name":"Main Parent Org Unit",
+"organisational_unit_external_id":"BU_0000",
 "v":"MEDIUM" },
 {"asset_code":"222222",
 "kind":"CUSTOMISED",
@@ -13,6 +13,6 @@
 "provenance":"TESTCASE",
 "description":"Description for an app called Application002", 
 "lifecycle_phase":"PRODUCTION",
-"organisational_unit_name":"Main Parent Org Unit",
+"organisational_unit_external_id":"BU_0000",
 "business_criticality":"HIGH" }
 ]
