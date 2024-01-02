@@ -1,0 +1,164 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+
+Table waltzloader."application-out.json" {
+  "name" "character varying(255)"
+  "description" "character varying(4000)"
+  "asset_code" "character varying(255)"
+  "organisational_unit_external_id" "character varying(200)"
+  "kind" "character varying(128)" [not null, default: `'IN_HOUSE'::charactervarying`]
+  "lifecycle_phase" "character varying(128)" [not null, default: `'PRODUCTION'::charactervarying`]
+  "parent_asset_code" "character varying(255)"
+  "overall_rating" "character (1)" [not null, default: `'Z'::bpchar`]
+  "provenance" "character varying(64)" [not null, default: `'waltz'::charactervarying`]
+  "business_criticality" "character varying(128)" [not null, default: `'UNKNOWN'::charactervarying`]
+  "entity_lifecycle_status" "character varying(64)" [not null, default: `'ACTIVE'::charactervarying`]
+  "planned_retirement_date" timestamp
+  "actual_retirement_date" timestamp
+  "commission_date" timestamp
+}
+
+Ref: "waltzloader"."application-out.json"."name" > "waltz"."application"."name"
+Ref: "waltzloader"."application-out.json"."description" > "waltz"."application"."description"
+Ref: "waltzloader"."application-out.json"."asset_code" > "waltz"."application"."asset_code"
+Ref: "waltzloader"."application-out.json"."organisational_unit_external_id" > "waltz"."organisational_unit"."external_id"
+Ref: "waltzloader"."application-out.json"."kind" > "waltz"."application"."kind"
+Ref: "waltzloader"."application-out.json"."lifecycle_phase" > "waltz"."application"."lifecycle_phase"
+Ref: "waltzloader"."application-out.json"."parent_asset_code" > "waltz"."application"."parent_asset_code"
+Ref: "waltzloader"."application-out.json"."overall_rating" > "waltz"."application"."overall_rating"
+Ref: "waltzloader"."application-out.json"."provenance" > "waltz"."application"."provenance"
+Ref: "waltzloader"."application-out.json"."business_criticality" > "waltz"."application"."business_criticality"
+Ref: "waltzloader"."application-out.json"."entity_lifecycle_status" > "waltz"."application"."entity_lifecycle_status"
+Ref: "waltzloader"."application-out.json"."planned_retirement_date" > "waltz"."application"."planned_retirement_date"
+Ref: "waltzloader"."application-out.json"."actual_retirement_date" > "waltz"."application"."actual_retirement_date"
+Ref: "waltzloader"."application-out.json"."commission_date" > "waltz"."application"."commission_date"
+
+
+
+Table waltz."application" {
+  "id" bigint [not null, increment]
+  "name" "character varying(255)"
+  "description" "character varying(4000)"
+  "asset_code" "character varying(255)"
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null]
+  "organisational_unit_id" bigint [not null]
+  "kind" "character varying(128)" [not null, default: `'IN_HOUSE'::charactervarying`]
+  "lifecycle_phase" "character varying(128)" [not null, default: `'PRODUCTION'::charactervarying`]
+  "parent_asset_code" "character varying(255)"
+  "overall_rating" "character (1)" [not null, default: `'Z'::bpchar`]
+  "provenance" "character varying(64)" [not null, default: `'waltz'::charactervarying`]
+  "business_criticality" "character varying(128)" [not null, default: `'UNKNOWN'::charactervarying`]
+  "is_removed" boolean [not null, default: false]
+  "entity_lifecycle_status" "character varying(64)" [not null, default: `'ACTIVE'::charactervarying`]
+  "planned_retirement_date" timestamp
+  "actual_retirement_date" timestamp
+  "commission_date" timestamp
+
+Indexes {
+  id [pk, name: "application_pkey"]
+}
+Note: 'Stores Application data'
+}
+
+
+
+Table waltz."organisational_unit" {
+  "id" bigint [not null]
+  "name" "character varying(255)"
+  "description" "character varying(4000)"
+  "parent_id" bigint
+  "created_at" timestamp [not null, default: `now()`]
+  "last_updated_at" timestamp [not null]
+  "external_id" "character varying(200)"
+  "created_by" "character varying(255)" [not null, default: `'waltz'::charactervarying`]
+  "last_updated_by" "character varying(255)" [not null, default: `'waltz'::charactervarying`]
+  "provenance" "character varying(64)" [not null, default: `'waltz'::charactervarying`]
+
+Indexes {
+  id [pk, name: "organisational_unit_pkey"]
+}
+}
+
+Ref: waltz."application"."organisational_unit_id" <> waltz."organisational_unit"."id"
+//Ref: waltz."organisational_unit"."id" > waltz."application"."organisational_unit_id"
+
+
+
+
+Table waltzUI."Application Summary" {
+  "Name" "character varying(255)"
+  "Asset Code" "character varying(255)"
+  "Lifecycle Phase" "character varying(128)" [not null, default: `'PRODUCTION'::charactervarying`]
+  "Type" "character varying(128)" [not null, default: `'IN_HOUSE'::charactervarying`]
+  "Owning Org Unit" bigint [not null]
+  "Overall Rating" "character (1)" [not null, default: `'Z'::bpchar`]
+  "Alias" "{List}"
+  "Tags" "{List}"
+  "Complexity Rating" "{TBD}"
+  "Business Criticality" "character varying(128)" [not null, default: `'UNKNOWN'::charactervarying`]
+  "Planned Retirement Date" timestamp
+  "Actual Retirement Date" timestamp
+  "Commission Date" timestamp  
+  "Provenance" "character varying(64)" [not null, default: `'waltz'::charactervarying`]
+  "Description" "character varying(4000)"
+}
+
+
+  
+Table waltz."entity_alias" {
+  "id" bigint [not null]
+  "alias" "character varying(255)" [not null]
+  "kind" "character varying(128)" [not null, default: `'APPLICATION'::charactervarying`]
+  "provenance" "character varying(64)" [not null, default: `'waltz'::charactervarying`]
+
+Indexes {
+  (id, kind, alias) [pk, name: "entity_alias_pkey"]
+}
+}
+
+Table waltz."tag" {
+  "id" bigint [not null, increment]
+  "name" "character varying(255)" [not null]
+  "target_kind" "character varying(64)" [not null]
+
+Indexes {
+  id [pk, name: "tag_pkey"]
+}
+}
+
+Table waltz."complexity" {
+  "id" bigint [not null, increment]
+  "complexity_kind_id" bigint [not null]
+  "entity_id" bigint [not null]
+  "entity_kind" "character varying(64)" [not null]
+  "score" numeric(10,3) [not null]
+  "last_updated_at" timestamp [not null, default: `now()`]
+  "last_updated_by" "character varying(255)" [not null]
+  "provenance" "character varying(64)" [not null, default: `'waltz'::charactervarying`]
+
+Indexes {
+  id [pk, name: "complexity_pkey"]
+}
+}
+
+
+
+Ref: "waltz"."application"."name" > "waltzUI"."Application Summary"."Name"
+Ref: "waltz"."application"."asset_code" > "waltzUI"."Application Summary"."Asset Code"
+Ref: "waltz"."application"."lifecycle_phase" > "waltzUI"."Application Summary"."Lifecycle Phase"
+Ref: "waltz"."application"."kind" > "waltzUI"."Application Summary"."Type"
+Ref: "waltz"."organisational_unit"."name" > "waltzUI"."Application Summary"."Owning Org Unit"
+Ref: "waltz"."application"."overall_rating" > "waltzUI"."Application Summary"."Overall Rating"
+Ref: "waltz"."entity_alias"."alias" > "waltzUI"."Application Summary"."Alias"
+Ref: "waltz"."tag"."name" > "waltzUI"."Application Summary"."Tags"
+Ref: "waltz"."complexity"."score" > "waltzUI"."Application Summary"."Complexity Rating"
+Ref: "waltz"."application"."business_criticality" > "waltzUI"."Application Summary"."Business Criticality"
+Ref: "waltz"."application"."planned_retirement_date" > "waltzUI"."Application Summary"."Planned Retirement Date"
+Ref: "waltz"."application"."actual_retirement_date" > "waltzUI"."Application Summary"."Actual Retirement Date"
+Ref: "waltz"."application"."commission_date" > "waltzUI"."Application Summary"."Commission Date"
+Ref: "waltz"."application"."provenance" > "waltzUI"."Application Summary"."Provenance"
+Ref: "waltz"."application"."description" > "waltzUI"."Application Summary"."Description"
+
+
