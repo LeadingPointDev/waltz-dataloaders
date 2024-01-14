@@ -1,0 +1,22 @@
+INSERT INTO public.vulnerability (id, external_id, severity, description, created_at, provenance)
+VALUES
+(1, 'cve_2023_1234a', 'High', 'Remote Code Execution vulnerability in log4j', now(), 'security_scans'),
+(2, 'cve_2023_5678a', 'Medium', 'SQL Injection vulnerability in Apache Maven', now(), 'security_scans'),
+(3, 'cve_2023_9876a', 'Low', 'Cross-Site Scripting in Spring Framework', now(), 'security_scans'),
+(4, 'cve_2023_4321a', 'Unknown', 'Information Disclosure in Docker', now(), 'security_scans'),
+(5, 'cve_2023_8765a', 'High', 'Remote Command Execution in Node.js', now(), 'security_scans'),
+(6, 'cve_2023_3456a', 'Medium', 'Denial of Service in Python packages', now(), 'security_scans'),
+(7, 'cve_2023_7890a', 'Low', 'AngularJS Cross-Site Request Forgery', now(), 'security_scans'),
+(8, 'cve_2023_6543a', 'Unknown', 'React Cross-Site Scripting', now(), 'security_scans'),
+(9, 'cve_2023_2109a', 'High', 'Vulnerability in Apache Tomcat', now(), 'security_scans'),
+(10, 'cve_2023_8765b', 'Medium', 'MySQL Connector/J SQL Injection', now(), 'security_scans'),
+(11, 'cve_2023_3456b', 'Low', 'Hibernate Remote Code Execution', now(), 'security_scans'),
+(12, 'cve_2023_7890b', 'Unknown', 'Jenkins Plugins Cross-Site Scripting', now(), 'security_scans'),
+(13, 'cve_2023_6543c', 'High', 'Apache Kafka Remote Command Execution', now(), 'security_scans'),
+(14, 'cve_2023_2109c', 'Medium', 'Elasticsearch Remote Code Execution', now(), 'security_scans'),
+(15, 'cve_2023_8765d', 'Low', 'RabbitMQ Cross-Site Request Forgery', now(), 'security_scans'),
+(16, 'cve_2023_3456d', 'Unknown', 'Git Information Disclosure', now(), 'security_scans'),
+(17, 'cve_2023_7890d', 'High', 'Ansible Remote Command Execution', now(), 'security_scans'),
+(18, 'cve_2023_6543d', 'Medium', 'Nginx Buffer Overflow', now(), 'security_scans'),
+(19, 'cve_2023_2109d', 'Low', 'Apache HTTP Server Cross-Site Scripting', now(), 'security_scans'),
+(20, 'cve_2023_8765e', 'Unknown', 'Android SDK Information Disclosure', now(), 'security_scans');
