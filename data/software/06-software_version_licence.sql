@@ -1,9 +1,9 @@
 INSERT INTO public.software_version_licence (id, software_version_id, licence_id, created_by, created_at, provenance)
 VALUES
 (1, 1, 1, 'admin', now(), 'sample_artifactory'),
-(2, 2, 1, 'admin', now(), 'sample_artifactory'),
-(3, 3, 1, 'admin', now(), 'sample_artifactory'),
-(4, 4, 1, 'admin', now(), 'sample_artifactory'),
+(2, 2, 2, 'admin', now(), 'sample_artifactory'),
+(3, 3, 2, 'admin', now(), 'sample_artifactory'),
+(4, 4, 2, 'admin', now(), 'sample_artifactory'),
 (5, 5, 2, 'admin', now(), 'sample_artifactory'),
 (6, 6, 4, 'admin', now(), 'sample_artifactory'),
 (7, 7, 4, 'admin', now(), 'sample_artifactory'),
@@ -13,12 +13,15 @@ VALUES
 (11, 11, 2, 'admin', now(), 'sample_artifactory'),
 (12, 12, 6, 'admin', now(), 'sample_artifactory'),
 (13, 13, 2, 'admin', now(), 'sample_artifactory'),
-(14, 14, 1, 'admin', now(), 'sample_artifactory'),
+(14, 14, 8, 'admin', now(), 'sample_artifactory'),
 (15, 15, 3, 'admin', now(), 'sample_artifactory'),
-(16, 16, 1, 'admin', now(), 'sample_artifactory'),
+(16, 16, 8, 'admin', now(), 'sample_artifactory'),
 (17, 17, 3, 'admin', now(), 'sample_artifactory'),
 (18, 18, 4, 'admin', now(), 'sample_artifactory'),
 (19, 19, 4, 'admin', now(), 'sample_artifactory'),
 (20, 20, 3, 'admin', now(), 'sample_artifactory'),
 (21, 21, 3, 'admin', now(), 'sample_artifactory'),
-(22, 22, 1, 'admin', now(), 'sample_artifactory');
+(22, 22, 8, 'admin', now(), 'sample_artifactory'),
+(23, 23, 1, 'admin', now(), 'sample_artifactory'),
+(24, 24, 1, 'admin', now(), 'sample_artifactory'),
+(25, 25, 1, 'admin', now(), 'sample_artifactory');
