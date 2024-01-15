@@ -1,10 +1,10 @@
 INSERT INTO public.software_usage (id, application_id, software_version_id, created_by, created_at, provenance)
 VALUES
 (1, 1, 1, 'admin', now(), 'sample_artifactory'),
-(2, 1, 1, 'admin', now(), 'sample_artifactory'),
-(3, 1, 1, 'admin', now(), 'sample_artifactory'),
-(4, 1, 1, 'admin', now(), 'sample_artifactory'),
-(5, 1, 1, 'admin', now(), 'sample_artifactory'),
+(2, 2, 1, 'admin', now(), 'sample_artifactory'),
+(3, 3, 1, 'admin', now(), 'sample_artifactory'),
+(4, 4, 1, 'admin', now(), 'sample_artifactory'),
+(5, 5, 1, 'admin', now(), 'sample_artifactory'),
 (6, 2, 6, 'admin', now(), 'sample_artifactory'),
 (7, 4, 7, 'admin', now(), 'sample_artifactory'),
 (8, 4, 8, 'admin', now(), 'sample_artifactory'),
@@ -21,6 +21,6 @@ VALUES
 (19, 9, 19, 'admin', now(), 'sample_artifactory'),
 (20, 20, 20, 'admin', now(), 'sample_artifactory'),
 (21, 20, 21, 'admin', now(), 'sample_artifactory'),
-(21, 22, 23, 'admin', now(), 'sample_artifactory'),
-(21, 23, 24, 'admin', now(), 'sample_artifactory'),
-(21, 24, 25, 'admin', now(), 'sample_artifactory');
+(22, 22, 23, 'admin', now(), 'sample_artifactory'),
+(23, 23, 24, 'admin', now(), 'sample_artifactory'),
+(24, 24, 25, 'admin', now(), 'sample_artifactory');
