@@ -98,9 +98,9 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
 
 
 
-        rawOverviews = rawOverviews.stream()
-                .filter(o -> o.target_entity_name().orElse("").equals("LPL_DIS_CONTROLLER"))
-                .collect(Collectors.toSet());
+        //rawOverviews = rawOverviews.stream()
+        //        .filter(o -> o.target_entity_name().orElse("").equals("LPL_DIS_CONTROLLER"))
+        //        .collect(Collectors.toSet());
 
 
 
