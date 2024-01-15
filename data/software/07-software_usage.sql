@@ -20,4 +20,7 @@ VALUES
 (18, 9, 18, 'admin', now(), 'sample_artifactory'),
 (19, 9, 19, 'admin', now(), 'sample_artifactory'),
 (20, 20, 20, 'admin', now(), 'sample_artifactory'),
-(21, 20, 21, 'admin', now(), 'sample_artifactory');
+(21, 20, 21, 'admin', now(), 'sample_artifactory'),
+(21, 22, 23, 'admin', now(), 'sample_artifactory'),
+(21, 23, 24, 'admin', now(), 'sample_artifactory'),
+(21, 24, 25, 'admin', now(), 'sample_artifactory');

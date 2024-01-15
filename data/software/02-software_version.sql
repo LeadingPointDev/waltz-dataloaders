@@ -21,4 +21,7 @@ VALUES
 (19, 19, '4.8.0', 'Automation tool for configuration management', 'ansible_4_8_0', 'admin', now(), 'sample_artifactory', '2022-11-12'),
 (20, 20, '1.20.1', 'Web server and reverse proxy server', 'nginx_1_20_1', 'admin', now(), 'sample_artifactory', '2022-07-08'),
 (21, 21, '2.4.48', 'Open-source web server', 'apache_http_server_2_4_48', 'admin', now(), 'sample_artifactory', '2023-04-05'),
-(22, 22, '31.0.0', 'Software development kit for Android app dev', 'android_sdk_31_0_0', 'admin', now(), 'sample_artifactory', '2022-08-15');
+(22, 22, '31.0.0', 'Software development kit for Android app dev', 'android_sdk_31_0_0', 'admin', now(), 'sample_artifactory', '2022-08-15'),
+(23, 1, '2.0.2', 'Logging library for Java', 'log4j_2_0_2', 'admin', now(), 'sample_artifactory', '2023-05-15'),
+(24, 1, '2.0.3', 'Logging library for Java', 'log4j_2_0_3', 'admin', now(), 'sample_artifactory', '2023-08-15'),
+(25, 1, '2.0.4', 'Logging library for Java', 'log4j_2_0_4', 'admin', now(), 'sample_artifactory', '2023-10-12');

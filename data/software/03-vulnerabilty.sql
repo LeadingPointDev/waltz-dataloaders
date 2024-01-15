@@ -19,4 +19,6 @@ VALUES
 (17, 'cve_2023_7890d', 'High', 'Ansible Remote Command Execution', now(), 'security_scans'),
 (18, 'cve_2023_6543d', 'Medium', 'Nginx Buffer Overflow', now(), 'security_scans'),
 (19, 'cve_2023_2109d', 'Low', 'Apache HTTP Server Cross-Site Scripting', now(), 'security_scans'),
-(20, 'cve_2023_8765e', 'Unknown', 'Android SDK Information Disclosure', now(), 'security_scans');
+(20, 'cve_2023_8765e', 'Unknown', 'Android SDK Information Disclosure', now(), 'security_scans'),
+(21, 'cve_2023_1234b', 'Medium', 'Medium Level vulnerability in log4j', now(), 'security_scans'),
+(22, 'cve_2023_1234c', 'Low', 'Low Level vulnerability in log4j', now(), 'security_scans');
