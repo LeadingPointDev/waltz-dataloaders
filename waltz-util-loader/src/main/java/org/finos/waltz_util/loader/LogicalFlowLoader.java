@@ -21,8 +21,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.finos.waltz_util.common.helper.JacksonUtilities.getJsonMapper;
-import static org.finos.waltz_util.schema.Tables.APPLICATION;
-import static org.finos.waltz_util.schema.Tables.LOGICAL_FLOW;
+import static org.finos.waltz_util.schema.Tables.*;
 
 
 @Value.Immutable
@@ -36,18 +35,11 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
 
 
     public LogicalFlowLoader() {
-        super(); //todo: ImmutableLogicalFlowOverview does not compile without this line, however it is not needed. Fix this.
+        super();
     }
 
     public LogicalFlowLoader(String resource) {
         super(resource);
-
-
-        // because the data available uses string matching, we cannot maintain the existing logical flows
-        System.out.printf("\u001B[31m WARNING: This loader will delete all existing logical flows and replace them with the data from %s%n" + ANSI_RESET, resource);
-        // clear the logical flow table
-        dsl.delete(LOGICAL_FLOW).execute();
-
     }
 
     @Override
@@ -55,7 +47,7 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
         return DiffResult.mkDiff(
                 existingOverviews,
                 desiredOverviews,
-                LogicalFlowOverview::source_entity_name,// todo: this line is wrong and is just here to make the code compile
+                LogicalFlowOverview::external_id,
                 Object::equals);
     }
 
@@ -120,6 +112,7 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
                             .target_entity_id(targetID)
                             .source_entity_kind(overview.source_entity_kind())
                             .target_entity_kind(overview.target_entity_kind())
+                            .external_id(overview.external_id())
                             .build());
                 }
                 else {
@@ -152,6 +145,10 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
 
     @Override
     protected void insertNew(DSLContext tx, Collection<LogicalFlowOverview> newRecords) {
+        Set<String> recordExternalIDs = newRecords
+                .stream()
+                .map(LogicalFlowOverview::external_id)
+                .collect(Collectors.toSet());
 
         List<LogicalFlowRecord> recordsToUpdate = newRecords
                 .stream()
@@ -175,6 +172,14 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
                 .batchInsert(recordsToUpdate)
                 .execute());
 
+
+        List<Long> logicalFlowIds = tx.select(LOGICAL_FLOW.ID)
+                .from(LOGICAL_FLOW)
+                .where(LOGICAL_FLOW.EXTERNAL_ID.in(recordExternalIDs))
+                .fetch()
+                .map(r -> r.getValue(LOGICAL_FLOW.ID));
+        tx.deleteFrom(LOGICAL_FLOW_DECORATOR)
+                .where(LOGICAL_FLOW_DECORATOR.LOGICAL_FLOW_ID.in(logicalFlowIds)).execute();
         int decoratorsCreated = summarizeResults(tx
                 .batchInsert(decorators)
                 .execute());
@@ -186,12 +191,52 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
 
     @Override
     protected void updateExisting(DSLContext tx, Collection<LogicalFlowOverview> existingRecords) {
-        //no need to implement as we are deleting all existing records
+        List<LogicalFlowRecord> recordsToUpdate = existingRecords
+                .stream()
+                .map(d -> {
+                    LogicalFlowRecord r = toJooqRecord(d);
+                    r.changed(LOGICAL_FLOW.EXTERNAL_ID, false);
+                    return r;
+                })
+                .collect(Collectors.toList());
+
+        int numUpdated = summarizeResults(tx
+                .batchUpdate(recordsToUpdate)
+                .execute());
+
+        System.out.println("Records Updated: " + numUpdated);
     }
 
     @Override
     protected void deleteExisting(DSLContext tx, Collection<LogicalFlowOverview> existingRecords) {
-        //no need to implement as we are deleting all existing records
+        Set<String> externalIDsToRemove = existingRecords
+                .stream()
+                .map(LogicalFlowOverview::external_id)
+                .collect(Collectors.toSet());
+
+        // get ID's of logical flows
+
+        List<Long> flowIds = tx.select(LOGICAL_FLOW.ID)
+                .from(LOGICAL_FLOW)
+                .where(LOGICAL_FLOW.EXTERNAL_ID.in(externalIDsToRemove))
+                .fetch()
+                .map(r -> r.getValue(LOGICAL_FLOW.ID));
+
+
+
+
+
+
+        int flowsDeleted = tx.deleteFrom(LOGICAL_FLOW)
+                .where(LOGICAL_FLOW.EXTERNAL_ID.in(externalIDsToRemove))
+                .execute();
+
+
+
+
+
+        System.out.println("Records Deleted from Logical Flow: " + flowsDeleted);
+        System.out.println("Records Deleted from Logical Flow Decorator: " );
     }
 
 
@@ -221,6 +266,7 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
                 .target_entity_id(logicalFlowRecord.getTargetEntityId())
                 .source_entity_kind(logicalFlowRecord.getSourceEntityKind())
                 .target_entity_kind(logicalFlowRecord.getTargetEntityKind())
+                .external_id(logicalFlowRecord.getExternalId())
                 .build();
 
 
@@ -256,11 +302,12 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
        record.setTargetEntityId(overview.target_entity_id().get());
        record.setSourceEntityKind(overview.source_entity_kind());
        record.setTargetEntityKind(overview.target_entity_kind());
+       record.setExternalId(overview.external_id());
        record.setProvenance("LPL-loader");
        record.setLastUpdatedBy("LPL-loader");
        record.setLastUpdatedAt(new java.sql.Timestamp(System.currentTimeMillis()));
        record.setCreatedBy("LPL-loader");
-         record.setCreatedAt(new java.sql.Timestamp(System.currentTimeMillis()));
+       record.setCreatedAt(new java.sql.Timestamp(System.currentTimeMillis()));
        return record;
     }
 

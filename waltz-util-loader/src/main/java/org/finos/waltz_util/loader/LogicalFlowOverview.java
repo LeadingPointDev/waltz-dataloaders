@@ -40,11 +40,19 @@ public abstract class LogicalFlowOverview {
     @JsonIgnore
     public abstract Optional<Long> target_entity_id();
 
+    @JsonIgnore
+    public abstract Optional<Long> decorator_id();
+
     @JsonProperty("TargetDatabase")
     public abstract Optional<String> target_entity_name();
 
     @JsonProperty("Firm")
     public abstract Optional<String> source_entity_name();
+
+    @JsonProperty("ProcessName")
+    public abstract String external_id();
+
+
 
 
 

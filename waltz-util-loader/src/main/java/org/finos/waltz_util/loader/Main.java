@@ -69,6 +69,12 @@ public class Main {
                     lfl.synch();
                     i = i + 1;
                     break;
+                case "-Physical_Flow":
+                    System.out.println("Loading physical flows");
+                    PhysicalFlowLoader pfl = new PhysicalFlowLoader(args[i + 1]);
+                    pfl.synch();
+                    i = i + 1;
+                    break;
 
 
 
