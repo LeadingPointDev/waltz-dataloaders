@@ -20,6 +20,7 @@ import javax.sql.DataSource;
 @Configuration
 @PropertySource(value = "classpath:waltz.properties", ignoreResourceNotFound = true)
 @PropertySource(value = "file:${user.home}/.waltz/waltz.properties", ignoreResourceNotFound = true)
+@PropertySource(value = "file:${external.config.path}", ignoreResourceNotFound = true)
 @PropertySource(value = "classpath:version.properties", ignoreResourceNotFound = true)
 @ComponentScan(value={"org.finos.waltz_util.loader"})
 public class DIBaseConfiguration {
