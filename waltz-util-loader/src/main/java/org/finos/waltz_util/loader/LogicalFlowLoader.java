@@ -30,10 +30,7 @@ import static org.finos.waltz_util.schema.Tables.*;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
 
-    private Long nextId = 1L;
-    public static final String ANSI_RESET = "\u001B[0m";
-
-
+    private Long nextId;
     public LogicalFlowLoader() {
         super();
     }
@@ -75,7 +72,9 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
                 }
             }
         }
-        return overviews;
+        return overviews.stream()
+                .filter(r -> r.external_id().isPresent())
+                .collect(Collectors.toSet());
 
     }
 
@@ -100,7 +99,10 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
             // for each overview, get the source and target names, and find the database id's for each
             // for each overview source_entity_name, find the id in the application table
             // for each overview target_entity_name, find the id in the application table
-
+            if (overview == null) {
+                System.out.println("Overview is null");
+                continue;
+            }
             if (overview.source_entity_name().isPresent() && overview.target_entity_name().isPresent()) {
                 String sourceName = overview.source_entity_name().get();
                 String targetName = overview.target_entity_name().get();
@@ -132,7 +134,14 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
 
     @Override
     protected Set<LogicalFlowOverview> getExistingRecordsAsOverviews(DSLContext tx) {
-        // need to fetch the Records based on strings from external data
+
+        // get max id from logical_flow table
+        nextId = tx.select(LOGICAL_FLOW.ID.max())
+                .from(LOGICAL_FLOW)
+                .fetchOne()
+                .getValue(LOGICAL_FLOW.ID.max());
+        nextId = nextId == null ? 1 : nextId + 1;
+
 
         return tx.select(LOGICAL_FLOW.fields())
                 .from(LOGICAL_FLOW)
@@ -147,7 +156,14 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
     protected void insertNew(DSLContext tx, Collection<LogicalFlowOverview> newRecords) {
         Set<String> recordExternalIDs = newRecords
                 .stream()
-                .map(LogicalFlowOverview::external_id)
+                .map(l -> {
+                    if (l.external_id().isPresent()) {
+                        return l.external_id().get();
+                    }
+                    else {
+                        return null;
+                    }
+                })
                 .collect(Collectors.toSet());
 
         List<LogicalFlowRecord> recordsToUpdate = newRecords
@@ -178,6 +194,7 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
                 .where(LOGICAL_FLOW.EXTERNAL_ID.in(recordExternalIDs))
                 .fetch()
                 .map(r -> r.getValue(LOGICAL_FLOW.ID));
+
         tx.deleteFrom(LOGICAL_FLOW_DECORATOR)
                 .where(LOGICAL_FLOW_DECORATOR.LOGICAL_FLOW_ID.in(logicalFlowIds)).execute();
         int decoratorsCreated = summarizeResults(tx
@@ -211,62 +228,38 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
     protected void deleteExisting(DSLContext tx, Collection<LogicalFlowOverview> existingRecords) {
         Set<String> externalIDsToRemove = existingRecords
                 .stream()
-                .map(LogicalFlowOverview::external_id)
+                .filter(r -> r.external_id().isPresent())
+                .map(r -> r.external_id().get())
                 .collect(Collectors.toSet());
 
         // get ID's of logical flows
-
         List<Long> flowIds = tx.select(LOGICAL_FLOW.ID)
                 .from(LOGICAL_FLOW)
                 .where(LOGICAL_FLOW.EXTERNAL_ID.in(externalIDsToRemove))
                 .fetch()
                 .map(r -> r.getValue(LOGICAL_FLOW.ID));
 
-
-
-
-
-
         int flowsDeleted = tx.deleteFrom(LOGICAL_FLOW)
                 .where(LOGICAL_FLOW.EXTERNAL_ID.in(externalIDsToRemove))
                 .execute();
 
-
-
-
-
+        int decoratorsDeleted = tx.deleteFrom(LOGICAL_FLOW_DECORATOR)
+                        .where(LOGICAL_FLOW_DECORATOR.LOGICAL_FLOW_ID.in(flowIds))
+                                .execute();
         System.out.println("Records Deleted from Logical Flow: " + flowsDeleted);
         System.out.println("Records Deleted from Logical Flow Decorator: " );
     }
 
-
-
-
-    //search for record via string name
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     @Override
     protected LogicalFlowOverview toOverview(Record record) {
         LogicalFlowRecord logicalFlowRecord = record.into(LOGICAL_FLOW);
+
         return ImmutableLogicalFlowOverview.builder()
                 .source_entity_id(logicalFlowRecord.getSourceEntityId())
                 .target_entity_id(logicalFlowRecord.getTargetEntityId())
                 .source_entity_kind(logicalFlowRecord.getSourceEntityKind())
                 .target_entity_kind(logicalFlowRecord.getTargetEntityKind())
-                .external_id(logicalFlowRecord.getExternalId())
+                .external_id(Optional.ofNullable(logicalFlowRecord.getExternalId()))
                 .build();
 
 
@@ -274,9 +267,6 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
     // need to add to "physical_flow" table
     // create link with specficiation_id
     // create link with logical_flow_id ??
-
-
-
 
     public static HashMap<String, Long> getApplicationNameToIDMap(DSLContext tx) {
         Result<Record> results = tx.
@@ -302,7 +292,7 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
        record.setTargetEntityId(overview.target_entity_id().get());
        record.setSourceEntityKind(overview.source_entity_kind());
        record.setTargetEntityKind(overview.target_entity_kind());
-       record.setExternalId(overview.external_id());
+       record.setExternalId(overview.external_id().orElse(null));
        record.setProvenance("LPL-loader");
        record.setLastUpdatedBy("LPL-loader");
        record.setLastUpdatedAt(new java.sql.Timestamp(System.currentTimeMillis()));
@@ -310,11 +300,4 @@ public class LogicalFlowLoader extends Loader<LogicalFlowOverview>{
        record.setCreatedAt(new java.sql.Timestamp(System.currentTimeMillis()));
        return record;
     }
-
-
-
-
-
-
-
 }

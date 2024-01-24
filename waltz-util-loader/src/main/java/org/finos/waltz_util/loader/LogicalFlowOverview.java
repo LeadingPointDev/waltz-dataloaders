@@ -50,7 +50,7 @@ public abstract class LogicalFlowOverview {
     public abstract Optional<String> source_entity_name();
 
     @JsonProperty("ProcessName")
-    public abstract String external_id();
+    public abstract Optional<String> external_id();
 
 
 
