@@ -61,7 +61,8 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
                                     .withId(id)
                                     .withOrganisational_unit_id(orgIdByOrgExtId.getOrDefault(
                                             a.organisational_unit_external_id(),
-                                            ORPHAN_ORG_UNIT_ID));
+                                            ORPHAN_ORG_UNIT_ID))
+                                    .withIsRemoved(false);
 
 
                         }
@@ -138,7 +139,13 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
         return tx
                 .select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
                 .from(ORGANISATIONAL_UNIT)
-                .fetchMap(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID);
+                .fetch()
+                .stream()
+                .collect(Collectors.toMap(
+                        record -> record.getValue(ORGANISATIONAL_UNIT.EXTERNAL_ID),
+                        record -> record.getValue(ORGANISATIONAL_UNIT.ID),
+                        (a, b) -> a
+                ));
     }
 
     protected Set<ApplicationOverview> loadFromFile() throws IOException {
@@ -226,7 +233,7 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
         record.setOverallRating(app.overall_rating());
         record.setProvenance(app.provenance());
         record.setBusinessCriticality(app.business_criticality().name());
-        record.setIsRemoved(false);
+        record.setIsRemoved(app.isRemoved().orElse(false));
         return record;
 
 
