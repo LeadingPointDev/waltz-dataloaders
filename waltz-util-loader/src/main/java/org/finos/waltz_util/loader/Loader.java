@@ -24,7 +24,7 @@ public abstract class Loader<T> {
     }
 
     public Loader() {
-        throw new UnsupportedOperationException("This constructor is not supported");
+        throw new IllegalArgumentException(this.getClass().getName() + " requires an arguement.");
     }
 
 
