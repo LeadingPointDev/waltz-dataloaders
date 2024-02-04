@@ -1,0 +1,569 @@
+<!--
+  ~ Waltz - Enterprise Architecture
+  ~ Copyright (C) 2016, 2017, 2018, 2019 Waltz open source project
+  ~ See README.md for more information
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific
+  ~
+  -->
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd"
+                   logicalFilePath="db.changelog-1.51.xml">
+
+    <changeSet id="v1-50-tag"
+               author="davidwatkins73">
+        <tagDatabase tag="v1.50"/> <!-- tag the current db version, i.e. the last  -->
+    </changeSet>
+
+    <!-- 6637: migrate owning_inv_kinds to their own involvement_group   -->
+    <changeSet id="20230601-6637-1"
+               author="woodjes">
+        <addColumn tableName="survey_run">
+            <column name="recipient_involvement_group_id"
+                    type="${id.type}">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20230601-6637-2"
+               author="woodjes">
+        <addColumn tableName="survey_run">
+            <column name="owner_involvement_group_id"
+                    type="${id.type}">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- 6637: migrate survey_run recipients   -->
+    <changeSet id="20230601-6637-3"
+               author="woodjes">
+        <sql>
+            insert into involvement_group (name, external_id, provenance)
+            select concat('Recipients for survey run: ', name), concat('RECIPIENTS_SURVEY_RUN_', id), 'waltz'
+            from survey_run
+            where involvement_kind_ids is not null
+              and involvement_kind_ids != '';
+        </sql>
+    </changeSet>
+
+    <changeSet id="20230601-6637-4"
+               author="woodjes">
+        <sql>
+            update survey_run
+            set recipient_involvement_group_id = (select id
+                                                  from involvement_group ig
+                                                  where ig.external_id = concat('RECIPIENTS_SURVEY_RUN_', survey_run.id))
+            where involvement_kind_ids is not null
+              and involvement_kind_ids != '';
+        </sql>
+    </changeSet>
+
+
+    <changeSet id="20230601-6637-5"
+               author="woodjes">
+        <sql>
+            insert into involvement_group_entry (involvement_group_id, involvement_kind_id)
+            select sr.recipient_involvement_group_id, ik.id
+            from survey_run sr
+                     inner join involvement_kind ik
+                                on concat(sr.involvement_kind_ids, ';') like concat('%', ik.id, ';%')
+            where involvement_kind_ids is not null
+              and involvement_kind_ids != '';
+        </sql>
+    </changeSet>
+
+    <!-- 6637: migrate survey_run owners   -->
+    <changeSet id="20230601-6637-6"
+               author="woodjes">
+        <sql>
+            insert into involvement_group (name, external_id, provenance)
+            select concat('Owners for survey run: ', name), concat('OWNERS_SURVEY_RUN_', id), 'waltz'
+            from survey_run
+            where owner_inv_kind_ids is not null
+              and owner_inv_kind_ids != '';
+        </sql>
+    </changeSet>
+
+    <changeSet id="20230601-6637-7"
+               author="woodjes">
+        <sql>
+            update survey_run
+            set owner_involvement_group_id = (select id
+                                              from involvement_group ig
+                                              where ig.external_id = concat('OWNERS_SURVEY_RUN_', survey_run.id))
+            where owner_inv_kind_ids is not null
+              and owner_inv_kind_ids != '';
+        </sql>
+    </changeSet>
+
+
+    <changeSet id="20230601-6637-8"
+               author="woodjes">
+        <sql>
+            insert into involvement_group_entry (involvement_group_id, involvement_kind_id)
+            select sr.owner_involvement_group_id, ik.id
+            from survey_run sr
+                     inner join involvement_kind ik on concat(sr.owner_inv_kind_ids, ';') like concat('%', ik.id, ';%')
+            where owner_inv_kind_ids is not null
+              and owner_inv_kind_ids != '';
+        </sql>
+    </changeSet>
+
+    <changeSet id="20230601-6637-9"
+               author="woodjes">
+        <comment>6637: migrate survey_run recipients to involvement group, drop column</comment>
+        <dropColumn tableName="survey_run"
+                    columnName="involvement_kind_ids"/>
+    </changeSet>
+
+    <changeSet id="20230601-6637-10"
+               author="woodjes">
+        <comment>6637: migrate survey_run owners to involvement group, drop column</comment>
+        <dropColumn tableName="survey_run"
+                    columnName="owner_inv_kind_ids"/>
+    </changeSet>
+
+
+    <!-- 6637: migrate attestation involvement_kind_ids to their own involvement_group   -->
+    <changeSet id="20230607-6637-11"
+               author="woodjes">
+        <addColumn tableName="attestation_run">
+            <column name="recipient_involvement_group_id"
+                    type="${id.type}">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- 6637: migrate survey_run recipients   -->
+    <changeSet id="20230607-6637-12"
+               author="woodjes">
+        <sql>
+            insert into involvement_group (name, external_id, provenance)
+            select concat('Recipients for attestation run: ', name), concat('RECIPIENTS_ATTESTATION_RUN_', id), 'waltz'
+            from attestation_run
+            where involvement_kind_ids is not null
+              and involvement_kind_ids != '';
+        </sql>
+    </changeSet>
+
+    <changeSet id="20230607-6637-13"
+               author="woodjes">
+        <sql>
+            update attestation_run
+            set recipient_involvement_group_id = (select id
+                                                  from involvement_group ig
+                                                  where ig.external_id =
+                                                        concat('RECIPIENTS_ATTESTATION_RUN_', attestation_run.id))
+            where involvement_kind_ids is not null
+              and involvement_kind_ids != '';
+        </sql>
+    </changeSet>
+
+
+    <changeSet id="20230607-6637-14"
+               author="woodjes">
+        <sql>
+            insert into involvement_group_entry (involvement_group_id, involvement_kind_id)
+            select ar.recipient_involvement_group_id, ik.id
+            from attestation_run ar
+                     inner join involvement_kind ik
+                                on concat(ar.involvement_kind_ids, ';') like concat('%', ik.id, ';%')
+            where involvement_kind_ids is not null
+              and involvement_kind_ids != '';
+        </sql>
+    </changeSet>
+
+
+    <changeSet id="20230607-6637-15"
+               author="woodjes">
+        <comment>6637: migrate attestation_run recipients to involvement group, drop column</comment>
+        <dropColumn tableName="attestation_run"
+                    columnName="involvement_kind_ids"/>
+    </changeSet>
+
+    <!-- 6612: add subject kind to involvement kind table -->
+    <changeSet id="20230522-6612-1"
+               author="woodjes">
+        <addColumn tableName="involvement_kind">
+            <column name="subject_kind"
+                    type="${enum.type}">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20230522-6612-2"
+               author="woodjes"
+               dbms="!h2">
+        <comment>6612: Updates the subject kind value for involvement kinds only used by one entity kind, if no usages
+            defaults to 'APPLICATION'
+        </comment>
+        <sql>
+            with specific_to_kind as (select ik.id, count(distinct i.entity_kind) count_kind
+                                      from involvement_kind ik
+                                               left join involvement i on ik.id = i.kind_id
+                                      group by ik.id
+                                      having count(distinct entity_kind) in (1, 0)),
+                 to_update as (select distinct ik.id, coalesce(entity_kind, 'APPLICATION') entity_kind
+                               from involvement_kind ik
+                                        left join involvement i on ik.id = i.kind_id
+                                        inner join specific_to_kind on ik.id = specific_to_kind.id)
+            update involvement_kind
+            set subject_kind = to_update.entity_kind from to_update
+            where to_update.id = involvement_kind.id;
+        </sql>
+    </changeSet>
+
+    <changeSet id="20230522-6612-3"
+               author="woodjes">
+        <comment>6612: create new name column to safely remove the unique constraint</comment>
+        <renameColumn tableName="involvement_kind"
+                      oldColumnName="name"
+                      newColumnName="old_name"/>
+    </changeSet>
+
+    <changeSet id="20230522-6612-4"
+               author="woodjes">
+        <comment>6612: create new name column to safely remove the unique constraint</comment>
+        <addColumn tableName="involvement_kind">
+            <column name="name"
+                    type="${name.type}">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20230522-6612-5"
+               author="woodjes">
+        <comment>6612: create new name column to safely remove the unique constraint</comment>
+        <update tableName="involvement_kind">
+            <column name="name"
+                    valueComputed="old_name"/>
+        </update>
+    </changeSet>
+
+    <changeSet id="20230522-6612-6"
+               author="woodjes">
+        <comment>6612: create new name column to safely remove the unique constraint</comment>
+        <addNotNullConstraint tableName="involvement_kind"
+                              columnName="name"
+                              columnDataType="${name.type}"/>
+    </changeSet>
+
+
+    <changeSet id="20230620-6612-6a"
+               author="davidwatkins73"
+               dbms="mssql">
+        <comment>6612: we do not know the unique column constraint name, therefore must use dynamic sql to remove it</comment>
+        <sql>
+            DECLARE @sql NVARCHAR(MAX)
+            select TOP 1 @sql = N'alter table involvement_kind drop constraint ['+ cc.name + N']'
+            from sys.key_constraints cc
+            WHERE cc.parent_object_id = OBJECT_ID('involvement_kind') and cc.type = 'UQ'
+            exec(@sql)
+        </sql>
+    </changeSet>
+
+    <changeSet id="20230522-6612-7"
+               author="woodjes">
+        <comment>6612: create new name column to safely remove the unique constraint</comment>
+        <dropColumn tableName="involvement_kind"
+                    columnName="old_name"/>
+    </changeSet>
+
+    <changeSet id="20230522-6612-8"
+               author="woodjes"
+               dbms="!h2">
+        <comment>6612: Updates the subject kind value for involvement kinds only used by more than one entity kind
+        </comment>
+        <sql>
+            with shared_kinds as (select kind_id, count(distinct entity_kind) count_kind
+                                  from involvement
+                                  group by kind_id
+                                  having count(distinct entity_kind) > 1),
+                 requires_splitting as (select distinct kind_id, entity_kind
+                                        from involvement
+                                        where kind_id in (select shared_kinds.kind_id from shared_kinds)),
+                 to_insert as (select ik.name,
+                                      ik.description,
+                                      'admin'                                                                      last_updated_by,
+                                      ik.user_selectable,
+                                      requires_splitting.entity_kind,
+                                      case
+                                          when ik.external_id is not null
+                                              then concat(requires_splitting.entity_kind, '_', ik.external_id) end external_id
+                               from requires_splitting
+                                        inner join involvement_kind ik on requires_splitting.kind_id = ik.id)
+            insert
+            into involvement_kind (name, description, last_updated_by, user_selectable, subject_kind, external_id)
+            select *
+            from to_insert;
+        </sql>
+    </changeSet>
+
+    <changeSet id="20230522-6612-9"
+               author="woodjes"
+               dbms="!h2">
+        <comment>6612: Updates the kind id value for existing involvements to use the new kind specific to subject
+            kind
+        </comment>
+        <sql>
+            with kind_mappings as (select involvement_kind.id old_id, new_id.id new_id, new_id.subject_kind new_kind
+                                   from involvement_kind
+                                            inner join involvement_kind new_id
+                                                       on involvement_kind.name = new_id.name and involvement_kind.id != new_id.id
+            where involvement_kind.subject_kind is null)
+                , required_updates as (
+            select i.entity_kind, i.entity_id, i.kind_id, kind_mappings.new_id
+            from involvement i
+                inner join kind_mappings
+            on i.kind_id = kind_mappings.old_id and i.entity_kind = kind_mappings.new_kind)
+            update involvement
+            set kind_id = required_updates.new_id from required_updates
+            where involvement.entity_id = required_updates.entity_id
+              and involvement.entity_kind = required_updates.entity_kind
+              and involvement.kind_id = required_updates.kind_id;
+        </sql>
+    </changeSet>
+
+    <changeSet id="20230522-6612-10"
+               author="woodjes"
+               dbms="!h2">
+        <comment>6612: Updates the kind id value for existing key involvements to use the new kind specific to subject
+            kind
+        </comment>
+        <sql>
+            with kind_mappings as (select involvement_kind.id old_id, new_id.id new_id, new_id.subject_kind new_kind
+                                   from involvement_kind
+                                            inner join involvement_kind new_id
+                                                       on involvement_kind.name = new_id.name and involvement_kind.id != new_id.id
+            where involvement_kind.subject_kind is null)
+                , default_mapping as (
+            select kind_mappings.old_id, min (kind_mappings.new_id) default_new_id
+            from kind_mappings
+            group by kind_mappings.old_id),
+                required_updates as (
+            select kik.involvement_kind_id, kik.entity_kind, coalesce (km.new_id, dm.default_new_id) new_kind_id
+            from key_involvement_kind kik
+                inner join default_mapping dm
+            on kik.involvement_kind_id = dm.old_id
+                left join kind_mappings km on kik.involvement_kind_id = km.old_id and kik.entity_kind = km.new_kind
+            where kik.involvement_kind_id in (select old_id from kind_mappings))
+            update key_involvement_kind
+            set involvement_kind_id = required_updates.new_kind_id from required_updates
+            where key_involvement_kind.entity_kind = required_updates.entity_kind
+              and key_involvement_kind.involvement_kind_id = required_updates.involvement_kind_id;
+        </sql>
+    </changeSet>
+
+    <changeSet id="20230522-6612-11"
+               author="woodjes"
+               dbms="!h2">
+        <comment>6612: Updates the kind id value for existing involvement group entries to use the new kind (if possible
+            by looking up usage in permission group involvement otherwise takes the first))
+        </comment>
+        <sql>
+            with kind_mappings as (select involvement_kind.id old_id, new_id.id new_id, new_id.subject_kind new_kind
+                                   from involvement_kind
+                                            inner join involvement_kind new_id
+                                                       on involvement_kind.name = new_id.name and involvement_kind.id !=new_id.id
+            where involvement_kind.subject_kind is null)
+                , default_mapping as (
+            select kind_mappings.old_id, min (kind_mappings.new_id) default_new_id
+            from kind_mappings
+            group by kind_mappings.old_id),
+                required_updates as (
+            select distinct ige.involvement_group_id, pgi.parent_kind entity_kind, ige.involvement_kind_id, coalesce (kind_mappings.new_id, dm.default_new_id) new_kind_id
+            from involvement_group_entry ige
+                inner join involvement_group ig
+            on ige.involvement_group_id = ig.id
+                inner join default_mapping dm on ige.involvement_kind_id = dm.old_id
+                left join permission_group_involvement pgi on ig.id = pgi.involvement_group_id
+                left join kind_mappings on ige.involvement_kind_id = kind_mappings.old_id
+                and pgi.parent_kind = kind_mappings.new_kind
+            where ige.involvement_kind_id in (select old_id from kind_mappings))
+            update involvement_group_entry
+            set involvement_kind_id = required_updates.new_kind_id from required_updates
+            where involvement_group_entry.involvement_group_id = required_updates.involvement_group_id
+              and involvement_group_entry.involvement_kind_id = required_updates.involvement_kind_id;
+        </sql>
+    </changeSet>
+
+    <changeSet id="20230522-6612-12"
+               author="woodjes"
+               dbms="!h2">
+        <comment>6612: Updates the report grid columns to the new inv kind</comment>
+        <sql>
+            with kind_mappings as (select involvement_kind.id old_id, new_id.id new_id, new_id.subject_kind new_kind
+                                   from involvement_kind
+                                            inner join involvement_kind new_id
+                                                       on involvement_kind.name = new_id.name and involvement_kind.id != new_id.id
+            where involvement_kind.subject_kind is null)
+                , required_updates as (
+            select distinct fcd.id, kind_mappings.new_id
+            from report_grid_fixed_column_definition fcd
+                inner join report_grid_column_definition cd
+            on fcd.grid_column_id = cd.id
+                inner join report_grid rg on cd.report_grid_id = rg.id
+                left join kind_mappings on fcd.column_entity_id = kind_mappings.old_id
+                and rg.subject_kind = kind_mappings.new_kind
+            where fcd.column_entity_kind = 'INVOLVEMENT_KIND'
+              and fcd.column_entity_id in (select old_id from kind_mappings))
+            update report_grid_fixed_column_definition
+            set column_entity_id = required_updates.new_id from required_updates
+            where report_grid_fixed_column_definition.id = required_updates.id;
+        </sql>
+    </changeSet>
+
+    <changeSet id="20230522-6612-13"
+               author="woodjes">
+        <comment>6612: Clean up old involvement kinds</comment>
+        <delete tableName="involvement_kind">
+            <where>
+                subject_kind is null and id not in (select kind_id from involvement);
+            </where>
+        </delete>
+    </changeSet>
+
+    <changeSet id="20230522-6612-14"
+               author="woodjes">
+        <comment>6612: Make subject kind required</comment>
+        <addNotNullConstraint tableName="involvement_kind"
+                              columnName="subject_kind"
+                              columnDataType="${enum.type}"/>
+    </changeSet>
+
+    <changeSet id="20230609-6612-15"
+               author="woodjes">
+        <comment>6612: Make name unique by subject kind</comment>
+        <addUniqueConstraint tableName="involvement_kind"
+                             constraintName="idx_inv_kind_name_subject_kind_unique"
+                             columnNames="name, subject_kind"/>
+    </changeSet>
+
+    <changeSet id="20230609-6612-16"
+               author="woodjes">
+        <comment>6612: Make name unique by subject kind</comment>
+        <addColumn tableName="involvement_kind">
+            <column name="permitted_role"
+                    type="${role.type}">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+
+    <changeSet id="20230616-6633-1"
+               author="woodjes">
+        <comment>6633: add cascade delete between software version and package tables</comment>
+        <dropForeignKeyConstraint baseTableName="software_version"
+                                  constraintName="soft_version_package_spid_fk"/>
+        <addForeignKeyConstraint baseTableName="software_version"
+                                 baseColumnNames="software_package_id"
+                                 constraintName="soft_version_package_spid_fk"
+                                 referencedTableName="software_package"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="20230616-6633-2"
+               author="woodjes">
+        <comment>6633: add cascade delete between software version and package tables</comment>
+        <dropForeignKeyConstraint baseTableName="software_usage"
+                                  constraintName="soft_usage_version_fk"/>
+        <addForeignKeyConstraint baseTableName="software_usage"
+                                 baseColumnNames="software_version_id"
+                                 constraintName="soft_usage_version_fk"
+                                 referencedTableName="software_version"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="20230616-6633-3"
+               author="woodjes">
+        <comment>6633: add cascade delete between software version and package tables</comment>
+
+        <dropForeignKeyConstraint baseTableName="software_version_licence"
+                                  constraintName="svl_licence_fk"/>
+
+        <addForeignKeyConstraint baseTableName="software_version_licence"
+                                 baseColumnNames="licence_id"
+                                 constraintName="svl_licence_fk"
+                                 referencedTableName="licence"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="20230616-6633-4"
+               author="woodjes">
+        <comment>6633: add cascade delete between software version and package tables</comment>
+        <dropForeignKeyConstraint baseTableName="software_version_licence"
+                                  constraintName="svl_version_fk"/>
+
+        <addForeignKeyConstraint baseTableName="software_version_licence"
+                                 baseColumnNames="software_version_id"
+                                 constraintName="svl_version_fk"
+                                 referencedTableName="software_version"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+
+    <changeSet id="20230601-6635-1"
+               author="davidwatkins73">
+        <addColumn tableName="measurable_rating">
+            <column name="is_primary"
+                    defaultValueBoolean="false"
+                    type="boolean">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20230601-6635-2"
+               author="davidwatkins73">
+        <setColumnRemarks tableName="measurable_rating" columnName="measurable_id" remarks="reference to the measurable being rated against the entity" />
+        <setColumnRemarks tableName="measurable_rating" columnName="entity_id" remarks="reference to the entity identifier being rated against the measurable" />
+        <setColumnRemarks tableName="measurable_rating" columnName="entity_kind" remarks="reference to the entity_kind (typically APPLICATION) being rated against the measurable" />
+        <setColumnRemarks tableName="measurable_rating" columnName="description" remarks="optional comment" />
+        <setColumnRemarks tableName="measurable_rating" columnName="last_updated_by" remarks="user that last updated the rating" />
+        <setColumnRemarks tableName="measurable_rating" columnName="provenance" remarks="where the rating came from, 'waltz' if via the ui" />
+        <setColumnRemarks tableName="measurable_rating" columnName="last_updated_at" remarks="when the rating was last updated" />
+        <setColumnRemarks tableName="measurable_rating" columnName="rating" remarks="the rating code which identifies the rating scheme item used in the rating.  This needs the measurable category to determine which scheme the code belongs to" />
+        <setColumnRemarks tableName="measurable_rating" columnName="is_readonly" remarks="flag to prevent updates via the UI" />
+        <setColumnRemarks tableName="measurable_rating" columnName="is_primary" remarks="flag to indicate the measurable is the primary one for the entity in it's category" />
+    </changeSet>
+
+    <changeSet id="20230601-6635-3"
+               author="davidwatkins73">
+        <addColumn tableName="measurable_category">
+            <column name="allow_primary_ratings"
+                    defaultValueBoolean="false"
+                    type="boolean">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20230601-6635-4"
+               author="davidwatkins73">
+        <setColumnRemarks tableName="measurable_category" columnName="position" remarks="overrides the default (alphabetical) sort ordering of this category, defaults to zero, lower numbers come first" />
+        <setColumnRemarks tableName="measurable_category" columnName="icon_name" remarks="fontawesome icon name for the category, defaults to puzzle-piece" />
+        <setColumnRemarks tableName="measurable_category" columnName="allow_primary_ratings" remarks="boolean flag used to determine if the taxonomy supports marking ratings as primary for an application" />
+    </changeSet>
+
+
+</databaseChangeLog>

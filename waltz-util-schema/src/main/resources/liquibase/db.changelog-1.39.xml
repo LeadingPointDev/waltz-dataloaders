@@ -1,0 +1,299 @@
+<!--
+  ~ Waltz - Enterprise Architecture
+  ~ Copyright (C) 2016, 2017, 2018, 2019 Waltz open source project
+  ~ See README.md for more information
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific
+  ~
+  -->
+
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd"
+                   logicalFilePath="db.changelog-1.39.xml">
+
+    <changeSet id="v1-38-tag"
+               author="davidwatkins73">
+        <tagDatabase tag="v1.38"/> <!-- tag the current db version, i.e. the last  -->
+    </changeSet>
+
+
+    <!-- moving from `com.khartec` to `org.finos` -->
+    <changeSet id="20211105-5755-1"
+               dbms="!h2"
+               author="woodjes">
+        <update tableName="settings">
+            <column name="value"
+                    value="org.finos.waltz.web.endpoints.auth.JWTAuthenticationFilter"/>
+            <where>value='com.khartec.waltz.web.endpoints.auth.JWTAuthenticationFilter'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="20211108-5755-2"
+               dbms="!h2"
+               author="davidwatkins73">
+        <update tableName="settings">
+            <column name="value"
+                    value="org.finos.waltz.web.endpoints.auth.HeaderBasedAuthenticationFilter"/>
+            <where>value='com.khartec.waltz.web.endpoints.auth.HeaderBasedAuthenticationFilter'</where>
+        </update>
+    </changeSet>
+
+
+    <!-- 5678: Move owner_id to new survey_instance_owner table   -->
+    <changeSet author="woodjes"
+               id="20211108-5678-1">
+        <createTable tableName="survey_instance_owner">
+            <column name="id"
+                    autoIncrement="true"
+                    type="${id.type}">
+                <constraints nullable="false"
+                             primaryKey="true"
+                             primaryKeyName="survey_instance_owner_pkey"/>
+            </column>
+            <column name="survey_instance_id"
+                    type="${id.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="person_id"
+                    type="${id.type}">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="20211108-5678-2"
+               author="woodjes">
+        <addForeignKeyConstraint baseColumnNames="person_id"
+                                 baseTableName="survey_instance_owner"
+                                 constraintName="survey_instance_owner_person_id_fkey"
+                                 onDelete="CASCADE"
+                                 referencedColumnNames="id"
+                                 referencedTableName="person"/>
+    </changeSet>
+
+    <changeSet id="20211108-5678-3"
+               author="woodjes">
+        <addForeignKeyConstraint baseColumnNames="survey_instance_id"
+                                 baseTableName="survey_instance_owner"
+                                 constraintName="survey_instance_owner_instance_id_fkey"
+                                 onDelete="CASCADE"
+                                 referencedColumnNames="id"
+                                 referencedTableName="survey_instance"/>
+    </changeSet>
+
+    <changeSet  id="20211108-5678-4"
+                author="woodjes">
+        <addUniqueConstraint columnNames="survey_instance_id, person_id"
+                             constraintName="unique_survey_instance_owner_id"
+                             tableName="survey_instance_owner"/>
+    </changeSet>
+
+    <changeSet id="20211108-5678-5"
+               author="woodjes">
+        <sql>
+            INSERT INTO survey_instance_owner (survey_instance_id, person_id)
+            SELECT DISTINCT survey_instance.id, survey_instance.owner_id
+            FROM survey_instance
+            INNER JOIN person on survey_instance.owner_id = person.id
+            WHERE owner_id IS NOT null
+            UNION (
+            SELECT DISTINCT survey_instance.id, survey_run.owner_id
+            FROM survey_instance
+            INNER JOIN survey_run ON survey_instance.survey_run_id = survey_run.id
+            INNER JOIN person on survey_run.owner_id = person.id
+            WHERE survey_run.owner_id IS NOT null );
+        </sql>
+    </changeSet>
+
+    <changeSet id="20211108-5678-6"
+               author="woodjes">
+        <comment>5678: drop survey_owner from survey_instance</comment>
+        <dropColumn tableName="survey_instance"
+                    columnName="owner_id"/>
+    </changeSet>
+
+
+    <!-- 5786: Add owner_kind_ids column to survey run -->
+    <changeSet id="20211117-5768-1"
+               author="woodjes">
+        <comment>5678: add owner_inv_kind_ids to survey_run</comment>
+        <addColumn tableName="survey_run">
+            <column name="owner_inv_kind_ids"
+                    type="${id-list.type}">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+
+    <!-- 5776: Add due date for submission and approval to survey instance -->
+    <changeSet id="20211118-5776-1"
+               author="woodjes">
+        <comment>5776: add approval due date to survey_instance</comment>
+        <addColumn tableName="survey_instance">
+            <column name="approval_due_date"
+                    type="DATE">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20211118-5776-2"
+               author="woodjes">
+        <comment>5776: add approval due date to survey_instance</comment>
+        <sql>
+            UPDATE survey_instance
+            SET approval_due_date = (SELECT due_date FROM survey_run WHERE id = survey_instance.survey_run_id)
+        </sql>
+    </changeSet>
+
+    <changeSet id="20211118-5776-3"
+               author="woodjes">
+        <comment>5776: add approval due date to survey_instance</comment>
+        <addNotNullConstraint tableName="survey_instance"
+                              columnName="approval_due_date"
+                              columnDataType="DATE"/>
+    </changeSet>
+
+
+    <!-- 5778: Add due date for submission and approval to survey instance -->
+    <changeSet id="20211119-5778-1"
+               author="davidwatkins73">
+        <comment>5778: Survey Runs: add submission and approval date offsets. Add an is_default column</comment>
+        <addColumn tableName="survey_run">
+            <column name="is_default"
+                    defaultValueBoolean="false"
+                    type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="survey_run">
+            <column name="approval_due_date"
+                    type="DATE">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20211119-5778-2"
+               author="davidwatkins73">
+        <sql>
+            UPDATE survey_run
+            SET approval_due_date = due_date
+        </sql>
+    </changeSet>
+
+    <changeSet id="20211119-5778-3"
+               author="davidwatkins73">
+        <addNotNullConstraint tableName="survey_run"
+                              columnName="approval_due_date"
+                              columnDataType="DATE"/>
+    </changeSet>
+
+
+    <!-- 5682: Create report grid member table   -->
+    <changeSet author="woodjes"
+               id="20211203-5682-1">
+        <createTable tableName="report_grid_member">
+            <column name="grid_id"
+                    type="${id.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id"
+                    type="${email.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role"
+                    type="${enum.type}"
+                    defaultValue="VIEWER">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="woodjes"
+               id="20211203-5682-2">
+        <addPrimaryKey columnNames="grid_id, user_id"
+                       constraintName="report_grid_member_pkey"
+                       tableName="report_grid_member"/>
+    </changeSet>
+
+    <changeSet author="woodjes"
+               id="20211203-5682-3">
+        <addColumn tableName="report_grid">
+            <column name="kind"
+                    type="${enum.type}"
+                    defaultValue="PUBLIC">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+
+    <changeSet author="woodjes"
+               id="20211220-5800-1">
+        <addColumn tableName="role">
+            <column name="user_selectable"
+                    type="boolean"
+                    defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+
+    <changeSet author="leprben"
+              id="20220101-5821-1" >
+        <addColumn tableName="application_group_entry">
+            <column name="created_at"
+                    type="TIMESTAMP"
+                    defaultValueComputed="${now.value}">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="leprben"
+              id="20220113-5821-2" >
+        <addColumn tableName="application_group_ou_entry">
+            <column name="created_at"
+                    type="TIMESTAMP"
+                    defaultValueComputed="${now.value}">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+
+    <changeSet id="20220114-5829-1"
+               author="davidwatkins73">
+        <addForeignKeyConstraint baseColumnNames="grid_id"
+                                 baseTableName="report_grid_member"
+                                 constraintName="report_grid_to_grid_member_fk"
+                                 onDelete="CASCADE"
+                                 referencedColumnNames="id"
+                                 referencedTableName="report_grid"/>
+    </changeSet>
+
+
+    <changeSet id="20220117-5803-1"
+               author="davidwatkins73">
+        <addColumn tableName="involvement_kind">
+            <column name="external_id"
+                    type="${external-id.type}">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

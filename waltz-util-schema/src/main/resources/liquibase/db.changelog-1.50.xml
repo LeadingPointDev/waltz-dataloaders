@@ -1,0 +1,147 @@
+<!--
+  ~ Waltz - Enterprise Architecture
+  ~ Copyright (C) 2016, 2017, 2018, 2019 Waltz open source project
+  ~ See README.md for more information
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific
+  ~
+  -->
+
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd"
+                   logicalFilePath="db.changelog-1.50.xml">
+
+    <changeSet id="v1-49-tag"
+               author="davidwatkins73">
+        <tagDatabase tag="v1.49"/> <!-- tag the current db version, i.e. the last  -->
+    </changeSet>
+
+    <changeSet id="20230515-92-1"
+               author="davidwatkins73">
+        <addColumn tableName="measurable">
+            <column name="position"
+                    type="${int.type}"
+                    defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20230515-92-2"
+               author="davidwatkins73">
+        <setTableRemarks tableName="measurable"
+                         remarks="defines a survey template, questions and runs will refer to this"/>
+        <setColumnRemarks tableName="measurable"
+                          columnName="id"
+                          remarks="unique identifier for this measurable record within waltz"/>
+        <setColumnRemarks tableName="measurable"
+                          columnName="parent_id"
+                          remarks="the id of the parent measurable"/>
+        <setColumnRemarks tableName="measurable"
+                          columnName="concrete"
+                          remarks="indicates whether this node in the taxonomy should be viewed as abstract or concrete.  Abstract measurables are typically not usable in ratings etc."/>
+        <setColumnRemarks tableName="measurable"
+                          columnName="description"
+                          remarks="description of the measurable item, markdown supported"/>
+        <setColumnRemarks tableName="measurable"
+                          columnName="external_id"
+                          remarks="identifier this measurable is known by externally.  Should not change, unlike the name which may change."/>
+        <setColumnRemarks tableName="measurable"
+                          columnName="external_id"
+                          remarks="identifier this measurable is known by externally.  Should not change, unlike the name which may change."/>
+        <setColumnRemarks tableName="measurable"
+                          columnName="last_updated_by"
+                          remarks="the last user to update this measurable record"/>
+        <setColumnRemarks tableName="measurable"
+                          columnName="last_updated_at"
+                          remarks="the datetime this measurable record was last updated"/>
+        <setColumnRemarks tableName="measurable"
+                          columnName="provenance"
+                          remarks="origination of this measurable record"/>
+        <setColumnRemarks tableName="measurable"
+                          columnName="measurable_category_id"
+                          remarks="the category groups a set of related measurables into a single taxonomy, e.g. Process"/>
+        <setColumnRemarks tableName="measurable"
+                          columnName="external_parent_id"
+                          remarks="external identifier of this items parent node, if available"/>
+        <setColumnRemarks tableName="measurable"
+                          columnName="entity_lifecycle_status"
+                          remarks="the lifecycle state of this measurable record (one of: ACTIVE, PENDING, REMOVED)"/>
+        <setColumnRemarks tableName="measurable"
+                          columnName="position"
+                          remarks="numeric position of this measurable, overrides the natural sorting on name. Suggest these are assigned with gaps so that reorders are simpler, e.g. 10, 20, 30"/>
+        <setColumnRemarks tableName="measurable"
+                          columnName="name"
+                          remarks="the name to show for this measurable item, should be relatively short"/>
+
+    </changeSet>
+
+    <changeSet id="20230517-6590-1"
+               author="davidwatkins73">
+        <addColumn tableName="measurable_category">
+            <column name="position"
+                    type="${int.type}"
+                    defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20230517-6590-2"
+               author="davidwatkins73">
+        <addColumn tableName="measurable_category">
+            <column name="icon_name"
+                    type="${enum.type}"
+                    defaultValue="puzzle-piece">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20230517-6590-3"
+               author="davidwatkins73">
+        <setTableRemarks tableName="measurable"
+                         remarks="defines a specific entry in a measurable category (e.g. a taxonomy item)"/>
+
+        <setTableRemarks tableName="measurable_category"
+                         remarks="groups a set of measurables together to form a basic hierarchical taxonomy"/>
+        <setColumnRemarks tableName="measurable_category"
+                          columnName="id"
+                          remarks="unique identifier for this measurable_category record within waltz"/>
+        <setColumnRemarks tableName="measurable_category"
+                          columnName="name"
+                          remarks="the name to show for this measurable category, should be relatively short"/>
+        <setColumnRemarks tableName="measurable_category"
+                          columnName="external_id"
+                          remarks="identifier this measurable category is known by externally.  Should not change, unlike the name which may change."/>
+        <setColumnRemarks tableName="measurable_category"
+                          columnName="last_updated_at"
+                          remarks="the datetime this measurable record was last updated"/>
+        <setColumnRemarks tableName="measurable_category"
+                          columnName="last_updated_by"
+                          remarks="the last user to update this measurable record"/>
+        <setColumnRemarks tableName="measurable_category"
+                          columnName="rating_scheme_id"
+                          remarks="links the rating scheme which will be used when entities align to the measurables in this category (via measurable_rating)"/>
+        <setColumnRemarks tableName="measurable_category"
+                          columnName="editable"
+                          remarks="can this taxonomy be edited in the Waltz UI"/>
+        <setColumnRemarks tableName="measurable_category"
+                          columnName="rating_editor_role"
+                          remarks="limits users who cam edit this taxonomy"/>
+        <setColumnRemarks tableName="measurable_category"
+                          columnName="constraining_assessment_definition_id"
+                          remarks="if the category and assessment share a rating scheme, this can be used to limit the maximum rating that can be given to measurable ratings (in this category)"/>
+    </changeSet>
+
+</databaseChangeLog>

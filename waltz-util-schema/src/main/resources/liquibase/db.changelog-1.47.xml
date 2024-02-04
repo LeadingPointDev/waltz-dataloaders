@@ -1,0 +1,534 @@
+<!--
+  ~ Waltz - Enterprise Architecture
+  ~ Copyright (C) 2016, 2017, 2018, 2019 Waltz open source project
+  ~ See README.md for more information
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific
+  ~
+  -->
+
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd"
+                   logicalFilePath="db.changelog-1.47.xml">
+
+    <changeSet id="v1-46-tag"
+               author="davidwatkins73">
+        <tagDatabase tag="v1.46"/> <!-- tag the current db version, i.e. the last  -->
+    </changeSet>
+
+
+    <!-- 6360 Rating Schemes -->
+
+    <changeSet id="20230105-6360-10"
+               author="davidwatkins73">
+        <comment>6360: enforce unique rating scheme names</comment>
+        <addUniqueConstraint tableName="rating_scheme"
+                             constraintName="idx_rating_scheme_name_unique"
+                             columnNames="name"/>
+    </changeSet>
+
+    <changeSet id="20230105-6360-20"
+               author="davidwatkins73">
+        <comment>6360: enforce unique rating item names</comment>
+        <addUniqueConstraint tableName="rating_scheme_item"
+                             constraintName="idx_rating_scheme_item_name_unique"
+                             columnNames="scheme_id, name"/>
+    </changeSet>
+
+    <changeSet id="20230105-6360-25"
+               author="davidwatkins73">
+        <comment>6360: enforce unique rating item external ids</comment>
+        <createIndex tableName="rating_scheme_item"
+                     unique="true"
+                     indexName="idx_rating_scheme_item_ext_id">
+            <column name="scheme_id"
+                    type="${id.type}"/>
+            <column name="external_id"
+                    type="${external-id.type}"/>
+        </createIndex>
+        <modifySql dbms="mssql">
+            <append value="WHERE external_id is not null"/>
+        </modifySql>
+    </changeSet>
+
+    <changeSet id="20230105-6360-30"
+               author="davidwatkins73">
+        <comment>6360: enforce unique assessment definition names</comment>
+        <addUniqueConstraint tableName="assessment_definition"
+                             constraintName="idx_assessment_definition_name_unique"
+                             columnNames="name"/>
+    </changeSet>
+
+    <changeSet id="20230105-6360-35"
+               author="davidwatkins73">
+        <comment>6360: enforce unique assessment definition external ids</comment>
+        <createIndex tableName="assessment_definition"
+                     unique="true"
+                     indexName="idx_assessment_definition_ext_id">
+            <column name="external_id"
+                    type="${external-id.type}"/>
+        </createIndex>
+        <modifySql dbms="mssql">
+            <append value="WHERE external_id is not null"/>
+        </modifySql>
+    </changeSet>
+
+
+    <changeSet id="20230105-6360-40"
+               author="davidwatkins73">
+        <comment>6360: add external id to rating scheme</comment>
+        <addColumn tableName="rating_scheme">
+            <column name="external_id"
+                    type="${external-id.type}">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20230105-6360-45"
+               author="davidwatkins73">
+        <comment>6360: enforce unique rating scheme external ids</comment>
+        <createIndex tableName="rating_scheme"
+                     unique="true"
+                     indexName="idx_rating_scheme_ext_id">
+            <column name="external_id"
+                    type="${external-id.type}"/>
+        </createIndex>
+        <modifySql dbms="mssql">
+            <append value="WHERE external_id is not null"/>
+        </modifySql>
+    </changeSet>
+
+    <changeSet id="20230105-6360-47"
+               author="woodjes">
+        <comment>6360: drop index to alter column</comment>
+        <dropIndex indexName="idx_rating_scheme_item_unique"
+                   tableName="rating_scheme_item"/>
+    </changeSet>
+
+    <changeSet id="20230105-6360-50"
+               author="davidwatkins73">
+        <comment>6360: increase size of code column</comment>
+        <modifyDataType columnName="code"
+                        newDataType="${short-code.type}"
+                        tableName="rating_scheme_item"/>
+    </changeSet>
+
+    <changeSet id="20230105-6360-52"
+               author="woodjes">
+        <comment>6360: recreate index for unique code per scheme</comment>
+        <createIndex tableName="rating_scheme_item"
+                     unique="true"
+                     indexName="idx_rating_scheme_item_unique">
+            <column name="scheme_id"
+                    type="${id.type}"/>
+            <column name="code"
+                    type="${short-code.type}"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="20230109-6360-53"
+               author="woodjes">
+        <comment>6360: drop default value of measurable rating</comment>
+        <dropDefaultValue columnDataType="${rag.type}"
+                          columnName="rating"
+                          tableName="measurable_rating"/>
+    </changeSet>
+
+    <changeSet id="20230105-6360-55"
+               author="davidwatkins73">
+        <comment>6360: increase size of measurable_rating rating column</comment>
+        <modifyDataType columnName="rating"
+                        newDataType="${short-code.type}"
+                        tableName="measurable_rating"/>
+    </changeSet>
+
+    <changeSet id="20230105-6360-60"
+               author="davidwatkins73">
+        <comment>6360: add nullable rating group</comment>
+        <addColumn tableName="rating_scheme_item">
+            <column name="rating_group"
+                    type="${name.type}">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20230105-6360-70"
+               author="davidwatkins73">
+        <comment>6360: document rating scheme item</comment>
+        <setTableRemarks tableName="rating_scheme_item" remarks="Used to enumerate the individual ratings which are part of a rating scheme"/>
+        <setColumnRemarks tableName="rating_scheme_item" columnName="code" remarks="short code to identify the item, long term plan is to replace by external_id in future version of waltz"/>
+        <setColumnRemarks tableName="rating_scheme_item" columnName="external_id" remarks="external identifier for this rating scheme item"/>
+        <setColumnRemarks tableName="rating_scheme_item" columnName="description" remarks="description of the item"/>
+        <setColumnRemarks tableName="rating_scheme_item" columnName="name" remarks="display name for the item"/>
+        <setColumnRemarks tableName="rating_scheme_item" columnName="id" remarks="autogenerated identifier"/>
+        <setColumnRemarks tableName="rating_scheme_item" columnName="position" remarks="overrides the natural alphabetical sorting"/>
+        <setColumnRemarks tableName="rating_scheme_item" columnName="color" remarks="color to use when rendering as a cell"/>
+        <setColumnRemarks tableName="rating_scheme_item" columnName="user_selectable" remarks="used to restrict ratings that should not be manually assigned"/>
+        <setColumnRemarks tableName="rating_scheme_item" columnName="scheme_id" remarks="the parent scheme for this item"/>
+        <setColumnRemarks tableName="rating_scheme_item" columnName="rating_group" remarks="used to visually group items in dropdowns etc."/>
+    </changeSet>
+
+    <changeSet id="20230105-6360-80"
+               author="davidwatkins73">
+        <comment>6360: document rating scheme</comment>
+        <setTableRemarks tableName="rating_scheme" remarks="Used to define a grouping of related values to be used when rating measurables and assessments"/>
+        <setColumnRemarks tableName="rating_scheme" columnName="description" remarks="description of the rating scheme"/>
+        <setColumnRemarks tableName="rating_scheme" columnName="id" remarks="auto generated identifier"/>
+        <setColumnRemarks tableName="rating_scheme" columnName="name" remarks="display name of the rating scheme"/>
+        <setColumnRemarks tableName="rating_scheme" columnName="external_id" remarks="external identifier for this rating scheme"/>
+    </changeSet>
+
+
+
+
+    <!-- 6359 Multi valued assessments -->
+
+    <changeSet id="20230105-6359-10"
+               author="davidwatkins73">
+        <comment>6359: add cardinality column to assessment_definition</comment>
+        <addColumn tableName="assessment_definition">
+            <column name="cardinality"
+                    type="${enum.type}"
+                    defaultValue="ZERO_ONE">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20230105-6359-20"
+               author="davidwatkins73">
+        <comment>6359: update natural key on assessment_rating to allow for multi-valued assessments, first drop existing key</comment>
+        <dropPrimaryKey tableName="assessment_rating"
+                        constraintName="assessment_rating_pkey"/>
+    </changeSet>
+
+    <changeSet id="20230105-6359-30"
+               author="davidwatkins73"
+               dbms="!h2">
+        <comment>6359: update natural key on assessment_rating to allow for multi-valued assessments, add new id
+            column
+        </comment>
+        <addColumn tableName="assessment_rating">
+            <column name="id"
+                    type="${id.type}"
+                    autoIncrement="true">
+                <constraints primaryKey="true"
+                             primaryKeyName="assessment_rating_pkey"
+                             nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+
+    <changeSet id="20230210-6359-31"
+               author="woodjes"
+               dbms="h2">
+        <comment>6359: update natural key on assessment_rating to allow for multi-valued assessments, add new id
+            column
+        </comment>
+        <addColumn tableName="assessment_rating">
+            <column name="id"
+                    type="${id.type}"
+                    autoIncrement="true">
+            </column>
+        </addColumn>
+        <addPrimaryKey columnNames="id"
+                       constraintName="assessment_rating_pkey"
+                       tableName="assessment_rating"/>
+    </changeSet>
+
+    <changeSet id="20230105-6359-40"
+               author="davidwatkins73">
+        <comment>6359: update natural key on assessment_rating to allow for multi-valued assessments, add unique index
+        </comment>
+        <addUniqueConstraint tableName="assessment_rating"
+                             columnNames="entity_kind, entity_id, assessment_definition_id, rating_id"/>
+    </changeSet>
+
+    <changeSet id="20230105-6359-50"
+               author="davidwatkins73">
+        <comment>6359: update assessment definition comments</comment>
+        <setColumnRemarks tableName="assessment_definition" columnName="cardinality"
+                          remarks="indicates the number of permitted ratings per entity, One of: ZERO_ONE, ZERO_MANY"/>
+    </changeSet>
+
+    <changeSet id="20230105-6359-60"
+               author="davidwatkins73">
+        <comment>6359: update assessment rating comments</comment>
+        <setColumnRemarks tableName="assessment_rating" columnName="id" remarks="auto generated identifier"/>
+    </changeSet>
+
+
+    <!-- 6368 Legal Entities -->
+
+    <changeSet id="20230112-6368-10"
+               author="woodjes">
+        <comment>6368: create legal_entity table</comment>
+        <createTable tableName="legal_entity">
+            <column name="id"
+                    type="${id.type}"
+                    autoIncrement="true">
+                <constraints nullable="false"
+                             primaryKey="true"
+                             primaryKeyName="legal_entity_pkey"/>
+            </column>
+            <column name="name"
+                    type="${name.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description"
+                    type="${description.type}">
+                <constraints nullable="true"/>
+            </column>
+            <column name="external_id"
+                    type="${external-id.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_updated_at"
+                    type="TIMESTAMP"
+                    defaultValueComputed="${now.value}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_updated_by"
+                    type="${name.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_lifecycle_status"
+                    type="${enum.type}"
+                    defaultValue="ACTIVE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="provenance"
+                    type="${provenance.type}"
+                    defaultValue="waltz">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="20230112-6368-20"
+               author="woodjes">
+        <comment>6368: create legal_entity_relationship_kind table</comment>
+        <createTable tableName="legal_entity_relationship_kind">
+            <column name="id"
+                    type="${id.type}"
+                    autoIncrement="true">
+                <constraints nullable="false"
+                             primaryKey="true"
+                             primaryKeyName="legal_entity_rel_kind_pkey"/>
+            </column>
+            <column name="name"
+                    type="${name.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description"
+                    type="${description.type}">
+                <constraints nullable="true"/>
+            </column>
+            <column name="target_kind"
+                    type="${enum.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cardinality"
+                    type="${enum.type}"
+                    defaultValue="ZERO_ONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="required_role"
+                    type="${enum.type}">
+                <constraints nullable="true"/>
+            </column>
+            <column name="external_id"
+                    type="${external-id.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_updated_at"
+                    type="TIMESTAMP"
+                    defaultValueComputed="${now.value}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_updated_by"
+                    type="${name.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="provenance"
+                    type="${provenance.type}"
+                    defaultValue="waltz">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="20230112-6368-30"
+               author="woodjes">
+        <comment>6368: create legal_entity_relationship table</comment>
+        <createTable tableName="legal_entity_relationship">
+            <column name="id"
+                    type="${id.type}"
+                    autoIncrement="true">
+                <constraints nullable="false"
+                             primaryKey="true"
+                             primaryKeyName="legal_entity_relationship_pkey"/>
+            </column>
+            <column name="legal_entity_id"
+                    type="${id.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="relationship_kind_id"
+                    type="${id.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="target_kind"
+                    type="${enum.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="target_id"
+                    type="${id.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description"
+                    type="${description.type}">
+                <constraints nullable="true"/>
+            </column>
+            <column name="external_id"
+                    type="${external-id.type}">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_updated_at"
+                    type="TIMESTAMP"
+                    defaultValueComputed="${now.value}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_updated_by"
+                    type="${name.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="provenance"
+                    type="${provenance.type}"
+                    defaultValue="waltz">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_readonly"
+                    type="boolean"
+                    defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+
+    <changeSet id="20230112-6368-40"
+               author="woodjes">
+        <comment>6368: create fk from legal_entity_relationship to legal_entity table</comment>
+        <addForeignKeyConstraint baseColumnNames="legal_entity_id"
+                                 baseTableName="legal_entity_relationship"
+                                 constraintName="legal_entity_rel_legal_entity_id_fkey"
+                                 onDelete="CASCADE"
+                                 referencedColumnNames="id"
+                                 referencedTableName="legal_entity"/>
+    </changeSet>
+
+
+    <changeSet id="20230112-6368-50"
+               author="woodjes">
+        <comment>6368: create fk from legal_entity_relationship to legal_entity_relationship_kind table</comment>
+        <addForeignKeyConstraint baseColumnNames="relationship_kind_id"
+                                 baseTableName="legal_entity_relationship"
+                                 constraintName="legal_entity_rel_rel_kind_id_fkey"
+                                 onDelete="CASCADE"
+                                 referencedColumnNames="id"
+                                 referencedTableName="legal_entity_relationship_kind"/>
+    </changeSet>
+
+
+    <changeSet id="20230112-6368-60"
+               author="woodjes">
+        <comment>6368: document legal_entity</comment>
+        <setTableRemarks tableName="legal_entity"
+                         remarks="used to represent an individual, company, or organization that has legal rights and obligations"/>
+        <setColumnRemarks tableName="legal_entity" columnName="id" remarks="autogenerated identifier"/>
+        <setColumnRemarks tableName="legal_entity" columnName="name" remarks="display name for the legal entity"/>
+        <setColumnRemarks tableName="legal_entity" columnName="description"
+                          remarks="longer description of the legal entity"/>
+        <setColumnRemarks tableName="legal_entity" columnName="external_id"
+                          remarks="external identifier for this legal entity"/>
+        <setColumnRemarks tableName="legal_entity" columnName="provenance"
+                          remarks="where did this legal entity originate, will be 'waltz' if provided via the UI"/>
+        <setColumnRemarks tableName="legal_entity" columnName="last_updated_at"
+                          remarks="when this legal entity record was last updated"/>
+        <setColumnRemarks tableName="legal_entity" columnName="last_updated_by"
+                          remarks="user responsible for the last update to this legal entity record"/>
+        <setColumnRemarks tableName="legal_entity" columnName="entity_lifecycle_status"
+                          remarks="the lifecycle state of this legal entity record (one of: ACTIVE, PENDING, REMOVED)"/>
+    </changeSet>
+
+
+    <changeSet id="20230112-6368-70"
+               author="woodjes">
+        <comment>6368: document legal_entity_relationship_kind</comment>
+        <setTableRemarks tableName="legal_entity_relationship_kind"
+                         remarks="describes the type of relationship between a legal entity and a target entity kind"/>
+        <setColumnRemarks tableName="legal_entity_relationship_kind" columnName="id"
+                          remarks="autogenerated identifier"/>
+        <setColumnRemarks tableName="legal_entity_relationship_kind" columnName="name"
+                          remarks="display name for the legal entity relationship kind"/>
+        <setColumnRemarks tableName="legal_entity_relationship_kind" columnName="description"
+                          remarks="longer description of the legal entity relationship kind"/>
+        <setColumnRemarks tableName="legal_entity_relationship_kind" columnName="external_id"
+                          remarks="external identifier for this legal entity relationship kind"/>
+        <setColumnRemarks tableName="legal_entity_relationship_kind" columnName="provenance"
+                          remarks="where did this legal entity relationship kind originate, will be 'waltz' if provided via the UI"/>
+        <setColumnRemarks tableName="legal_entity_relationship_kind" columnName="target_kind"
+                          remarks="the kind of entity that a legal entity can have this kind of relationship with"/>
+        <setColumnRemarks tableName="legal_entity_relationship_kind" columnName="cardinality"
+                          remarks="the number of relationships that can be supported between a legal entity and the target kind. Can be one of 'ZERO_ONE' (default) or 'ZERO_MANY"/>
+        <setColumnRemarks tableName="legal_entity_relationship_kind" columnName="required_role"
+                          remarks="the permitted role a user must have to make edits to relationships of this kind. If left blank no permitted role is required"/>
+        <setColumnRemarks tableName="legal_entity_relationship_kind" columnName="last_updated_at"
+                          remarks="when this legal entity relationship kind record was last updated"/>
+        <setColumnRemarks tableName="legal_entity_relationship_kind" columnName="last_updated_by"
+                          remarks="user responsible for the last update to this legal entity relationship kind record"/>
+    </changeSet>
+
+
+    <changeSet id="20230112-6368-80"
+               author="woodjes">
+        <comment>6368: document legal_entity_relationship</comment>
+        <setTableRemarks tableName="legal_entity_relationship"
+                         remarks="the relationship between a legal entity and target entity"/>
+        <setColumnRemarks tableName="legal_entity_relationship" columnName="id" remarks="autogenerated identifier"/>
+        <setColumnRemarks tableName="legal_entity_relationship" columnName="legal_entity_id"
+                          remarks="the identifier of the legal entity involved in the relationship"/>
+        <setColumnRemarks tableName="legal_entity_relationship" columnName="relationship_kind_id"
+                          remarks="the type of relationship between the legal entity and the target"/>
+        <setColumnRemarks tableName="legal_entity_relationship" columnName="target_kind"
+                          remarks="the kind of entity that a legal entity has been related to"/>
+        <setColumnRemarks tableName="legal_entity_relationship" columnName="target_id"
+                          remarks="the if of the entity that a legal entity has been related to"/>
+        <setColumnRemarks tableName="legal_entity_relationship" columnName="description"
+                          remarks="longer description of this legal entity relationship"/>
+        <setColumnRemarks tableName="legal_entity_relationship" columnName="external_id"
+                          remarks="external identifier for this legal entity relationship"/>
+        <setColumnRemarks tableName="legal_entity_relationship" columnName="provenance"
+                          remarks="where did this legal entity relationship originate, will be 'waltz' if provided via the UI"/>
+        <setColumnRemarks tableName="legal_entity_relationship" columnName="last_updated_at"
+                          remarks="when this legal entity relationship kind record was last updated"/>
+        <setColumnRemarks tableName="legal_entity_relationship" columnName="last_updated_by"
+                          remarks="user responsible for the last update to this legal entity relationship kind record"/>
+        <setColumnRemarks tableName="legal_entity_relationship" columnName="is_readonly"
+                          remarks="can this record be removed/edited by users (e.g. set to true if externally mastered)"/>
+    </changeSet>
+
+</databaseChangeLog>
