@@ -1,0 +1,68 @@
+[
+{
+	"employee_id":"000001",
+	"display_name":"John Smith",
+	"email":"john.smith@example.com",
+	"user_principal_name":"jsmith",
+	"department_name":"Testing Department Executives Group",
+	"kind":"EMPLOYEE",
+	"manager_employee_id":"",
+	"title":"Testing Executive",
+	"office_phone":"(718)-193-4567",
+	"mobile_phone":"(917)-391-8765",
+	"organisational_unit_external_id":"BU_0010"
+},
+{
+	"employee_id":"000002",
+	"display_name":"Jane Doe",
+	"email":"jane.doe@example.com",
+	"user_principal_name":"jdoe",
+	"department_name":"Testing Department Group",
+	"kind":"CONSULTANT",
+	"manager_employee_id":"000004",
+	"title":"Testing Consultant",
+	"office_phone":"(908)-779-4544",
+	"mobile_phone":"(501)-779-4542",
+	"organisational_unit_external_id":"BU_0020"
+},
+{
+	"employee_id":"333333",
+	"display_name":"Bill Townson",
+	"email":"bill.townson@example.com",
+	"user_principal_name":"btownson",
+	"department_name":"Testing Department Group",
+	"kind":"CONTRACTOR",
+	"manager_employee_id":"000004",
+	"title":"Testing Contractor",
+	"office_phone":"(123)-996-6376",
+	"mobile_phone":"(990)-391-2342",
+	"organisational_unit_external_id":"BU_0020"
+},
+{
+	"employee_id":"000004",
+	"display_name":"Melissa Jackson",
+	"email":"melissa.jackson@example.com",
+	"user_principal_name":"mjackson",
+	"department_name":"Testing Department Contractors Group",
+	"kind":"CONTRACTOR",
+	"manager_employee_id":"000001",
+	"title":"Testing Employee",
+	"office_phone":"(123)-129-4567",
+	"mobile_phone":"(201)-889-2335",
+	"organisational_unit_external_id":"BU_0010"
+},
+{
+	"employee_id":"555555",
+	"display_name":"Arthur B. Wellingburg",
+	"email":"Arthur.Wellingburg@example.com",
+	"user_principal_name":"awellingburg",
+	"department_name":"QA Team Group",
+	"kind":"CONTRACTOR",
+	"manager_employee_id":"",
+	"title":"Lead QA",
+	"office_phone":"(404)-566-5789",
+	"mobile_phone":"(434)-466-7635",
+	"organisational_unit_external_id":"BU_0010"
+}
+]
+
