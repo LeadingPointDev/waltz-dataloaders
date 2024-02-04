@@ -2,20 +2,29 @@
 {
 	"name":"Main Parent Org Unit",
 	"description":"Main Parent Org Unit - top level for this org",
+	"parent_external_id":"",
 	"external_id":"BU_0000",
-	"parent_external_id":""
+	"created_by":"admin",
+	"last_updated_by":"admin",
+	"provenance":"TESTCASE"
 },
 {
 	"name":"Child Org Unit 001",
 	"description":"Child Org Unit 001 - child of main org",
+	"parent_external_id":"BU_0000",
 	"external_id":"BU_0010",
-	"parent_external_id":"BU_0000"
+	"created_by":"admin",
+	"last_updated_by":"admin",
+	"provenance":"TESTCASE"
 },
 {
 	"name":"Child Org Unit 002",
 	"description":"Child Org Unit 002 - child of main org",
+	"parent_external_id":"BU_0000",
 	"external_id":"BU_0020",
-	"parent_external_id":"BU_0000"
+	"created_by":"admin",
+	"last_updated_by":"admin",
+	"provenance":"TESTCASE"
 }
 ]
 
