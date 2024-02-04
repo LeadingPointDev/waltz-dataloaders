@@ -1,0 +1,104 @@
+<!--
+  ~ Waltz - Enterprise Architecture
+  ~ Copyright (C) 2016, 2017, 2018, 2019 Waltz open source project
+  ~ See README.md for more information
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific
+  ~
+  -->
+
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd"
+                   logicalFilePath="db.changelog-1.49.xml">
+
+    <changeSet id="v1-48-tag"
+               author="davidwatkins73">
+        <tagDatabase tag="v1.48"/> <!-- tag the current db version, i.e. the last  -->
+    </changeSet>
+
+    <changeSet id="20230427-6574-1"
+               author="davidwatkins73">
+        <addColumn tableName="survey_template">
+            <column name="issuance_role"
+                    type="${role.type}"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20230427-6574-2"
+               author="davidwatkins73">
+        <setTableRemarks tableName="survey_template"
+                         remarks="defines a survey template, questions and runs will refer to this"/>
+        <setColumnRemarks tableName="survey_template"
+                          columnName="id"
+                          remarks="identifier for this survey template (auto generated)"/>
+        <setColumnRemarks tableName="survey_template"
+                          columnName="name"
+                          remarks="short name for this survey template"/>
+        <setColumnRemarks tableName="survey_template"
+                          columnName="description"
+                          remarks="longer description for this template, supports markdown"/>
+        <setColumnRemarks tableName="survey_template"
+                          columnName="target_entity_kind"
+                          remarks="defines what kind of entities this survey can be issued against.  Typically: APPLICATION or CHANGE_INITIATIVE"/>
+        <setColumnRemarks tableName="survey_template"
+                          columnName="owner_id"
+                          remarks="person id of the owner of this template"/>
+        <setColumnRemarks tableName="survey_template"
+                          columnName="created_at"
+                          remarks="date this template was created"/>
+        <setColumnRemarks tableName="survey_template"
+                          columnName="status"
+                          remarks="describes the status of this template, which dictates whether it can be issued or modified. e.g. ACTIVE, DRAFT, OBSOLETE"/>
+        <setColumnRemarks tableName="survey_template"
+                          columnName="external_id"
+                          remarks="external identifier for this template"/>
+        <setColumnRemarks tableName="survey_template"
+                          columnName="issuance_role"
+                          remarks="the role required for a user to issue surveys against an entity, or to issue a run. If null, all users can issue this survey"/>
+    </changeSet>
+    
+    <changeSet id="20230427-6576-1" 
+               author="watkdav">
+        <addColumn tableName="entity_statistic_definition">
+            <column name="external_id"
+                       type="${external-id.type}">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20230427-6576-2"
+               author="watkdav">
+        <createIndex tableName="entity_statistic_definition"
+                     unique="true"
+                     indexName="idx_entity_statistic_definition_ext_id">
+            <column name="external_id"
+                    type="${external-id.type}"/>
+        </createIndex>
+        <modifySql dbms="mssql">
+            <append value="WHERE external_id is not null"/>
+        </modifySql>
+    </changeSet>
+
+    <changeSet id="20230429-6577-1"
+               author="davidwatkins73">
+        <insert tableName="role">
+            <column name="key" value="EUDA_ADMIN"/>
+            <column name="name" value="EUDA Administrator"/>
+            <column name="description" value="Users can who can promote EUDAs to full applications"/>
+            <column name="is_custom" valueBoolean="false"/>
+            <column name="user_selectable" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,116 @@
+<!--
+  ~ Waltz - Enterprise Architecture
+  ~ Copyright (C) 2016, 2017, 2018, 2019 Waltz open source project
+  ~ See README.md for more information
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific
+  ~
+  -->
+
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd"
+                   logicalFilePath="db.changelog-1.35.xml">
+
+    <changeSet id="v1-34-tag"
+               author="davidwatkins73">
+        <tagDatabase tag="v1.34"/> <!-- tag the current db version, i.e. the last  -->
+    </changeSet>
+
+    <changeSet id="20210630-5471-1"
+               author="davidwatkins73">
+        <update tableName="settings">
+            <column name="value"
+                    value="Prod - WIP v1.35"/>
+            <where>name='ui.logo.overlay.text'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="20210702-5445-1"
+               author="woodjes">
+        <comment>5445: adding columns to auth source table</comment>
+        <addColumn tableName="authoritative_source">
+            <column name="external_id"
+                    type="${external-id.type}">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="authoritative_source">
+            <column name="last_updated_at"
+                    type="TIMESTAMP"
+                    defaultValueComputed="${now.value}">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="authoritative_source">
+            <column name="last_updated_by"
+                    type="${name.type}"
+                    defaultValue="admin">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20210702-5445-2"
+               author="woodjes">
+        <dropDefaultValue columnDataType="${name.type}"
+                          columnName="last_updated_by"
+                          tableName="authoritative_source"/>
+    </changeSet>
+
+
+    <changeSet id="20210706-5512-1"
+               author="davidwatkins73">
+        <comment>Permission group involvement for attestation of measurable categories</comment>
+
+        <insert tableName="permission_group_involvement">
+            <column name="permission_group_id" value="1"/>
+            <column name="subject_kind" value="ATTESTATION"/>
+            <column name="qualifier_kind" value="MEASURABLE_CATEGORY"/>
+        </insert>
+    </changeSet>
+
+
+    <changeSet id="20210714-5453-1"
+               author="dwatkins"
+               dbms="mysql,postgresql">
+        <sql>
+            UPDATE enum_value SET icon_color = '#5BB65D' WHERE type = 'AuthoritativenessRating' and key = 'PRIMARY';
+            UPDATE enum_value SET icon_color = '#B7A61F' WHERE type = 'AuthoritativenessRating' and key = 'SECONDARY';
+            UPDATE enum_value SET icon_color = '#939393' WHERE type = 'AuthoritativenessRating' and key = 'NO_OPINION';
+            UPDATE enum_value SET icon_color = '#DA524B' WHERE type = 'AuthoritativenessRating' and key = 'DISCOURAGED';
+        </sql>
+    </changeSet>
+
+
+    <changeSet id="20210714-5453-1"
+               author="dwatkins"
+               dbms="mssql">
+        <sql>
+            UPDATE enum_value SET icon_color = '#5BB65D' WHERE [type] = 'AuthoritativenessRating' and [key] = 'PRIMARY';
+            UPDATE enum_value SET icon_color = '#B7A61F' WHERE [type] = 'AuthoritativenessRating' and [key] = 'SECONDARY';
+            UPDATE enum_value SET icon_color = '#939393' WHERE [type] = 'AuthoritativenessRating' and [key] = 'NO_OPINION';
+            UPDATE enum_value SET icon_color = '#DA524B' WHERE [type] = 'AuthoritativenessRating' and [key] = 'DISCOURAGED';
+        </sql>
+    </changeSet>
+
+
+    <changeSet id="20210630-5471-2"
+               author="davidwatkins73">
+        <update tableName="settings">
+            <column name="value"
+                    value="Prod v1.35"/>
+            <where>name='ui.logo.overlay.text'</where>
+        </update>
+    </changeSet>
+
+</databaseChangeLog>

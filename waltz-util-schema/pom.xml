@@ -59,6 +59,35 @@
             </plugin>
 
             <plugin>
+                <groupId>org.liquibase</groupId>
+                <artifactId>liquibase-maven-plugin</artifactId>
+                <version>${liquibase.maven.version}</version>
+                <configuration>
+                    <changeLogFile>
+                       src/main/resources/liquibase/db.changelog-master.xml
+                    </changeLogFile>
+                    <driver>${jdbc.driver}</driver>
+                    <url>${database.url}</url>
+                    <username>${database.user}</username>
+                    <password>${database.password}</password>
+                    <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
+                    <!--
+                        Enable the `exclude-ft` context if testing with linux mssql image as full text not yet supported
+                        <contexts>exclude-ft</contexts>
+                    -->
+                </configuration>
+
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>update</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <!-- Specify the maven code generator plugin -->
                 <groupId>${jooq.group}</groupId>
                 <artifactId>jooq-codegen-maven</artifactId>
