@@ -48,7 +48,7 @@ public abstract class PersonOverview {
     public abstract Optional<String> mobile_phone();
 
 
-    public abstract Optional<String> officePhone();
+    public abstract Optional<String> office_phone();
 
     public abstract String organisational_unit_external_id();
 
