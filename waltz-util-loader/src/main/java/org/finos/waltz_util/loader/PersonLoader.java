@@ -243,7 +243,7 @@ public class PersonLoader {
                 .user_principal_name(Optional.ofNullable(personRecord.getUserPrincipalName()))
                 .department_name(Optional.ofNullable(personRecord.getDepartmentName()))
                 .mobile_phone(Optional.ofNullable(personRecord.getMobilePhone()))
-                .officePhone(Optional.ofNullable(personRecord.getOfficePhone()))
+                .office_phone(Optional.ofNullable(personRecord.getOfficePhone()))
                 .organisational_unit_id(personRecord.getOrganisationalUnitId())
                 .organisational_unit_external_id(r.get(ORGANISATIONAL_UNIT.EXTERNAL_ID))
                 .build();
@@ -265,7 +265,7 @@ public class PersonLoader {
         record.setManagerEmployeeId(domain.manager_employee_id().orElse("0"));
         record.setTitle(domain.title().orElse(null));
         record.setMobilePhone(domain.mobile_phone().orElse(null));
-        record.setOfficePhone(domain.officePhone().orElse(null));
+        record.setOfficePhone(domain.office_phone().orElse(null));
         record.setOrganisationalUnitId(domain.organisational_unit_id().orElse(ORPHAN_ORG_UNIT_ID));
         record.setIsRemoved(false);// we only build records for new and updated people, which means they aren't removed
         return record;
