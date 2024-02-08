@@ -106,6 +106,7 @@ public class PersonLoader {
                 .from(PERSON)
                 .innerJoin(ORGANISATIONAL_UNIT)
                 .on(ORGANISATIONAL_UNIT.ID.eq(PERSON.ORGANISATIONAL_UNIT_ID))
+                .where(PERSON.IS_REMOVED.eq(false))
                 .fetch()
                 .stream()
                 .map(r -> toDomain(r))
