@@ -192,12 +192,10 @@ public class OrgUnitLoader extends Loader<OrgUnitOverview>{
                 .id(record.getId())
                 .parent_id(Optional.ofNullable(record.getParentId()))
                 .external_id(record.getExternalId())
-                // do we need to have the created at/updated at fields, I think not?
-//                .createdAt(record.getCreatedAt())
-//                .lastUpdatedAt(record.getLastUpdatedAt())
-//                .createdBy(record.getCreatedBy())
-//                .lastUpdatedBy(record.getLastUpdatedBy())
-                //
+                .created_at(record.getCreatedAt())
+                .last_updated_at(record.getLastUpdatedAt())
+                .created_by(record.getCreatedBy())
+                .last_updated_by(record.getLastUpdatedBy())
                 .provenance(record.getProvenance())
                 .build();
 
