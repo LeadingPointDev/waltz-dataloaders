@@ -1,0 +1,42 @@
+[
+{
+	"employee_id":"000001",
+	"display_name":"John Smith",
+	"email":"john.smith@example.com",
+	"user_principal_name":"jsmith",
+	"department_name":"Testing Department Executives",
+	"kind":"EMPLOYEE",
+	"manager_employee_id":"",
+	"title":"Testing Executive",
+	"office_phone":"(718)-123-4567",
+	"mobile_phone":"(917)-321-8765",
+	"organisational_unit_external_id":"BU_0010"
+},
+{
+	"employee_id":"000002",
+	"display_name":"Jane Doe",
+	"email":"jane.doe@example.com",
+	"user_principal_name":"jdoe",
+	"department_name":"Testing Department",
+	"kind":"CONSULTANT",
+	"manager_employee_id":"000001",
+	"title":"Testing Consultant",
+	"office_phone":"(908)-777-4544",
+	"mobile_phone":"(501)-777-4542",
+	"organisational_unit_external_id":"BU_0020"
+},
+{
+	"employee_id":"000003",
+	"display_name":"Bill Townson",
+	"email":"updated.email@example.com",
+	"user_principal_name":"btownson",
+	"department_name":"Testing Department",
+	"kind":"CONTRACTOR",
+	"manager_employee_id":"000001",
+	"title":"Testing Contractor",
+	"office_phone":"(123)-936-6376",
+	"mobile_phone":"(990)-341-2342",
+	"organisational_unit_external_id":"BU_0020"
+}
+]
+
