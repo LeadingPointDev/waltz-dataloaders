@@ -1,0 +1,20 @@
+[
+    {
+        "source_entity_name": "Fi360",
+        "target_entity_name": "Confluence",
+        "ProcessName": "Fi - Confluence",
+        "description": "This is a test physical flow involving the Fi360 and Confluence applications."
+    },
+    {
+        "source_entity_name": "SmartDesk",
+        "target_entity_name": "Sailpoint API Integration",
+        "ProcessName": "SmartDesk - Sailpoint",
+        "description": "This is a test physical flow involving the SmartDesk and Sailpoint applications."
+    },
+    {
+        "source_entity_name": "DataPower",
+        "target_entity_name": "Sponsorworks",
+        "ProcessName": "DataPower - Sponsorworks",
+        "description": "This is a test physical flow involving the DataPower and Sponsorwork applications."
+    }
+]
