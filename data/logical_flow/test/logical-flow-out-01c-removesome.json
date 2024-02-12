@@ -1,0 +1,23 @@
+[
+    {
+        "Firm": "Cohesity",
+        "TargetDatabase": "Newsroom",
+        "source_entity_kind": "APPLICATION",
+        "target_entity_kind": "APPLICATION",
+        "ProcessName": "LF-001"
+    },
+    {
+        "Firm": "Slack",
+        "TargetDatabase": "WorkDay",
+        "source_entity_kind": "APPLICATION",
+        "target_entity_kind": "APPLICATION",
+        "ProcessName": "LF-003"
+    },
+    {
+        "Firm": "Rep Reports",
+        "TargetDatabase": "Cohesity",
+        "source_entity_kind": "APPLICATION",
+        "target_entity_kind": "APPLICATION",
+        "ProcessName": "LF-005"
+    }
+]

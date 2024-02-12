@@ -1,0 +1,23 @@
+[
+    {
+        "Firm": "Cohesity",
+        "TargetDatabase": "Newsroom",
+        "source_entity_kind": "APPLICATION",
+        "target_entity_kind": "APPLICATION",
+        "ProcessName": "LF-001"
+    },
+    {
+        "Firm": "OctopusDeploy",
+        "TargetDatabase": "CW Login",
+        "source_entity_kind": "APPLICATION",
+        "target_entity_kind": "APPLICATION",
+        "ProcessName": "LF-002"
+    },
+    {
+        "Firm": "Slack",
+        "TargetDatabase": "NetApp",
+        "source_entity_kind": "APPLICATION",
+        "target_entity_kind": "APPLICATION",
+        "ProcessName": "LF-003"
+    }
+]
