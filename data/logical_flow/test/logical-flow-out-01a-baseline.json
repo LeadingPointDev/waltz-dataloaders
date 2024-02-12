@@ -15,7 +15,7 @@
     },
     {
         "Firm": "Slack",
-        "TargetDatabase": "NetApp",
+        "TargetDatabase": "WorkDay",
         "source_entity_kind": "APPLICATION",
         "target_entity_kind": "APPLICATION",
         "ProcessName": "LF-003"
