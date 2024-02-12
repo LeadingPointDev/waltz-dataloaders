@@ -5,12 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 
 import org.finos.waltz_util.common.helper.DiffResult;
-import org.finos.waltz_util.schema.tables.records.LogicalFlowDecoratorRecord;
-import org.finos.waltz_util.schema.tables.records.LogicalFlowRecord;;
-import org.finos.waltz_util.schema.tables.records.PhysicalFlowRecord;
-import org.finos.waltz_util.schema.tables.records.PhysicalSpecificationRecord;
+import org.finos.waltz_util.common.model.Criticality;
+import org.finos.waltz_util.schema.tables.LogicalFlow;
+import org.finos.waltz_util.schema.tables.records.*;
+;
 import org.jooq.*;
 import org.jooq.Record;
+import org.jooq.impl.DSL;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -66,31 +67,37 @@ public class PhysicalFlowLoader extends Loader<PhysicalFlowOverview>{
 
     @Override
     protected Set<PhysicalFlowOverview> processOverviews(Set<PhysicalFlowOverview> rawOverviews) {
-        /** Heres what to do:
-         * 1. Get the Physical Flow Overviews, check what state they come in - this determines the next steps
-         * 2 Figure out what to put in the mock JSON and set up a Run Configuration to run the loader (Args etc)
-         *
-         * For Data onboarding:
-         *  - Ensure that it is valid with logical flows as well.
-         *
-         *  Link with process name (need map)
-         *  Need mapping functions for all the different tables we have to pull in, can it be done with SQL?
-         *
-         *
-         *
-         */
+
         Set<PhysicalFlowOverview> processedOverviews = new HashSet<>();
         // get max id from logical_flow table
 
+
+
+
+
         //Getting correct maps here:
         HashMap<String, Long> nameToAppID = getNameAppIdMap(dsl);
+        HashMap<Long, Long> logicalFlowToDecoratorMap = getFlowDecoratorRelationship(dsl);
+        HashMap<String, Long> lfExIDToID = getLfExIDToID(dsl);
+        HashMap<String, Long> physicalFlowToSpecMap = getFlowToSpecMap(dsl);
+        HashMap<String, Long> pfExIDToID = pfExIDToID(dsl);
+
+
+
 
         // fill in data for each overview
         for (PhysicalFlowOverview p : rawOverviews){
+
+
             PhysicalFlowOverview newO = ImmutablePhysicalFlowOverview.copyOf(p)
+                    .withId(pfExIDToID.get(p.external_id()))
                     .withSource_entity_id(nameToAppID.get(p.source_entity_name().get()))
                     .withTarget_entity_id(nameToAppID.get(p.target_entity_name().get()))
-                    ;
+                    .withSource_entity_name(p.source_entity_name().get())
+                    .withTarget_entity_name(p.target_entity_name().get())
+                    .withLogical_flow_id(lfExIDToID.get(p.logical_flow_external_id()))
+                    .withLogical_flow_decorator_id(Optional.ofNullable(logicalFlowToDecoratorMap.get(lfExIDToID.get(p.logical_flow_external_id()))))
+                    .withPhysical_specification_id(Optional.ofNullable(physicalFlowToSpecMap.get(p.physical_specification_external_id())));
 
 
 
@@ -102,6 +109,30 @@ public class PhysicalFlowLoader extends Loader<PhysicalFlowOverview>{
         }
         // return the set of overviews
         return processedOverviews;
+    }
+
+    private HashMap<String, Long> pfExIDToID(DSLContext tx) {
+        return new HashMap<>(tx.select(PHYSICAL_FLOW.EXTERNAL_ID, PHYSICAL_FLOW.ID)
+                .from(PHYSICAL_FLOW)
+                .fetch()
+                .stream()
+                .collect(Collectors.toMap(
+                        r -> r.getValue(PHYSICAL_FLOW.EXTERNAL_ID),
+                        r -> r.getValue(PHYSICAL_FLOW.ID),
+                        (a,b) -> a)
+                ));
+    }
+
+    private HashMap<Long, Long> getFlowDecoratorRelationship(DSLContext tx) {
+        return new HashMap<>(tx.select(LOGICAL_FLOW_DECORATOR.ID, LOGICAL_FLOW_DECORATOR.LOGICAL_FLOW_ID)
+                .from(LOGICAL_FLOW_DECORATOR)
+                .fetch()
+                .stream()
+                .collect(Collectors.toMap(
+                        r -> r.getValue(LOGICAL_FLOW_DECORATOR.LOGICAL_FLOW_ID),
+                        r -> r.getValue(LOGICAL_FLOW_DECORATOR.ID),
+                        (a,b) -> a
+                )));
     }
 
     @Override
@@ -247,7 +278,69 @@ public class PhysicalFlowLoader extends Loader<PhysicalFlowOverview>{
     }
 
     @Override
-    protected void updateExisting(DSLContext tx, Collection<PhysicalFlowOverview> existingRecords) {
+    protected void updateExisting(DSLContext tx, Collection<PhysicalFlowOverview> existingOverviews) {
+        // for each overview, apply soft update function
+
+
+
+
+        Set<Long> logicalFlowIDs = existingOverviews.stream()
+                .map(o -> o.logical_flow_id().orElse(null))
+                .collect(Collectors.toSet());
+        Set<Long> loigcalFlowDecoratorIDs = existingOverviews.stream()
+                .map(o -> o.logical_flow_decorator_id().orElse(null))
+                .collect(Collectors.toSet());
+        Set<Long> physicalSpecIDs = existingOverviews.stream()
+                .map(o -> o.physical_specification_id().orElse(null))
+                .collect(Collectors.toSet());
+        Set<Long> physicalFlowIDs = existingOverviews.stream()
+                .map(o -> o.id().orElse(null))
+                .collect(Collectors.toSet());
+
+        int logicalFlowCount = 0;
+        int logicalFlowDecoratorCount = 0;
+        int physicalSpecCount = 0;
+        int physicalFlowCount = 0;
+
+        for (PhysicalFlowOverview overview : existingOverviews) {
+            // logical flow
+            // logical flow decorator
+            // physical spec
+            // physical flow
+            try {
+                tx.transaction(configuration -> {
+
+                    DSLContext transactionContext = DSL.using(configuration);
+                    try {
+                        boolean flag = true;
+
+                        flag = softInsertLogicalFlow(overview, logicalFlowIDs, transactionContext) == 1 && flag;
+                        flag = softInsertLogicalFlowDecorator(overview, loigcalFlowDecoratorIDs, transactionContext) == 1 && flag;
+                        flag = softInsertPhysicalFlowSpecification(overview, physicalSpecIDs, transactionContext) == 1 && flag;
+                        flag = softInsertPhysicalFlow(overview, physicalFlowIDs, transactionContext) == 1 && flag;
+
+                        if (!flag) {
+                            throw new RuntimeException("Failed to update physical flow");
+                        }
+
+
+
+                    } catch (Exception e) {
+                        System.out.println("The physical flow with external ID '" + overview.external_id() +"' has failed to load" );
+                        throw new RuntimeException(e); // This will cause the transaction to roll back
+                    }
+
+                });
+            } catch (Exception e) {
+                System.out.println("Transaction failed: " + e.getMessage());
+            }
+            logicalFlowCount++;
+            logicalFlowDecoratorCount++;
+            physicalSpecCount++;
+            physicalFlowCount++;
+
+        }
+        System.out.println("Logical Flows Updated: " + logicalFlowCount + "\nLogical Flow Decorators Updated: " + logicalFlowDecoratorCount + "\nPhysical Specifications Updated: " + physicalSpecCount + "\nPhysical Flows Updated: " + physicalFlowCount);
 
     }
 
@@ -262,11 +355,13 @@ public class PhysicalFlowLoader extends Loader<PhysicalFlowOverview>{
 
         try {
             return ImmutablePhysicalFlowOverview.builder()
+
                     .external_id(record.getValue(PHYSICAL_FLOW.EXTERNAL_ID))
                     .description(Optional.ofNullable(record.getValue(PHYSICAL_FLOW.DESCRIPTION)))
                     .basis_offset(record.getValue(PHYSICAL_FLOW.BASIS_OFFSET))
                     .transport(record.getValue(PHYSICAL_FLOW.TRANSPORT))
                     .frequency(record.getValue(PHYSICAL_FLOW.FREQUENCY))
+                    .criticality(Criticality.valueOf(record.getValue(PHYSICAL_FLOW.CRITICALITY)))
                     .logical_flow_id(Optional.ofNullable(record.getValue(LOGICAL_FLOW.ID)))
                     .source_entity_id(record.getValue(LOGICAL_FLOW.SOURCE_ENTITY_ID))
                     .target_entity_id(record.getValue(LOGICAL_FLOW.TARGET_ENTITY_ID))
@@ -281,6 +376,8 @@ public class PhysicalFlowLoader extends Loader<PhysicalFlowOverview>{
                     .format(record.getValue(PHYSICAL_SPECIFICATION.FORMAT))
                     .owning_entity_id(Optional.ofNullable(record.getValue(PHYSICAL_SPECIFICATION.OWNING_ENTITY_ID)))
                     .owning_entity_kind(record.getValue(PHYSICAL_SPECIFICATION.OWNING_ENTITY_KIND))
+                    .physical_specification_id(record.getValue(PHYSICAL_SPECIFICATION.ID))
+                    .logical_flow_decorator_id(record.getValue(LOGICAL_FLOW_DECORATOR.ID))
                     .physical_specification_id(record.getValue(PHYSICAL_SPECIFICATION.ID))
                     .build();
         } catch (Exception e) {
@@ -317,6 +414,7 @@ public class PhysicalFlowLoader extends Loader<PhysicalFlowOverview>{
     private LogicalFlowDecoratorRecord toLogicalFlowDecoratorRecord(PhysicalFlowOverview overview){
         LogicalFlowDecoratorRecord record = new LogicalFlowDecoratorRecord();
         if (overview.logical_flow_id().isPresent()){
+            record.setId(overview.logical_flow_decorator_id().orElse(null));
             record.setLogicalFlowId(overview.logical_flow_id().get());
             record.setDecoratorEntityKind(overview.decorator_entity_kind());
             record.setDecoratorEntityId(overview.decorator_entity_id()); // Default 1L
@@ -390,5 +488,78 @@ public class PhysicalFlowLoader extends Loader<PhysicalFlowOverview>{
                                 (a,b) -> a
                 )));
     }
+
+
+    private int softInsertLogicalFlow(PhysicalFlowOverview overview,Set<Long> existingIds, DSLContext tx) throws Exception {
+        LogicalFlowRecord record = toLogicalFlowRecord(overview);
+        try{
+            if (existingIds.contains(overview.logical_flow_id().get())){
+                return tx.update(LOGICAL_FLOW).set(record).where(LOGICAL_FLOW.ID.eq(overview.logical_flow_id().get())).execute();
+            }
+            else{
+                return tx.insertInto(LOGICAL_FLOW).set(record).execute();
+            }
+        } catch (Exception e){
+            System.out.println("Error inserting logical flow: " + e.getMessage());
+            System.out.println("Record: " + record);
+            throw new Exception(e);
+        }
+
+
+    }
+
+    private int softInsertLogicalFlowDecorator(PhysicalFlowOverview overview, Set<Long> existingIds, DSLContext tx) throws Exception {
+        LogicalFlowDecoratorRecord record = toLogicalFlowDecoratorRecord(overview);
+        try{
+            if (existingIds.contains(overview.logical_flow_decorator_id().get())){
+                return tx.update(LOGICAL_FLOW_DECORATOR).set(record).where(LOGICAL_FLOW_DECORATOR.LOGICAL_FLOW_ID.eq(record.getLogicalFlowId())).execute();
+            }
+            else{
+                return tx.insertInto(LOGICAL_FLOW_DECORATOR).set(record).execute();
+            }
+        } catch (Exception e){
+            System.out.println(record);
+            System.out.println("Error inserting logical flow decorator: " + e.getMessage());
+            throw new Exception(e);
+        }
+
+    }
+
+    private int softInsertPhysicalFlowSpecification(PhysicalFlowOverview overview, Set<Long> existingIds, DSLContext tx) throws Exception {
+        PhysicalSpecificationRecord record = toPhysicalSpecification(overview);
+        try{
+            if (existingIds.contains(overview.physical_specification_id().get())){
+                return tx.update(PHYSICAL_SPECIFICATION).set(record).where(PHYSICAL_SPECIFICATION.ID.eq(overview.physical_specification_id().get())).execute();
+            }
+            else{
+                System.out.println(record);
+                return tx.insertInto(PHYSICAL_SPECIFICATION).set(record).execute();
+            }
+        } catch (Exception e){
+
+            System.out.println("Error inserting physical specification: " + e.getMessage());
+            System.out.println(record);
+            throw new Exception(e);
+        }
+
+    }
+
+    private int softInsertPhysicalFlow(PhysicalFlowOverview overview, Set<Long> existingIds, DSLContext tx) throws Exception {
+        PhysicalFlowRecord record = toPhysicalFLow(overview);
+        try{
+            if (existingIds.contains(overview.id().get())){
+                return tx.update(PHYSICAL_FLOW).set(record).where(PHYSICAL_FLOW.ID.eq(overview.id().get())).execute();
+            }
+            else{
+                return tx.insertInto(PHYSICAL_FLOW).set(record).execute();
+            }
+        } catch (Exception e){
+            System.out.println(record);
+            System.out.println("Error inserting physical flow: " + e.getMessage());
+            throw new Exception(e);
+        }
+
+    }
+
 
 }

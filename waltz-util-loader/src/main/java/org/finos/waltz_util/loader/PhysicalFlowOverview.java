@@ -21,6 +21,7 @@ public abstract class PhysicalFlowOverview {
     @JsonIgnore
     public abstract Optional<Long> logical_flow_id();
     @JsonIgnore
+    @Value.Auxiliary
     public abstract Optional<Long> id();
 
 
@@ -35,9 +36,11 @@ public abstract class PhysicalFlowOverview {
     public String logical_flow_external_id(){
         return external_id() + "-lf";
     }
+    @Value.Auxiliary
     public abstract Optional<String> source_entity_name();
     @JsonIgnore
     public abstract Optional<Long> source_entity_id();
+    @Value.Auxiliary
     public abstract Optional<String> target_entity_name();
     @JsonIgnore
     public abstract Optional<Long> target_entity_id();
@@ -49,14 +52,17 @@ public abstract class PhysicalFlowOverview {
     public String target_entity_kind(){
         return "APPLICATION";
     }
-
-
     // Decorator Table
     @Value.Default
     public String decorator_entity_kind() {
         return "DATA_TYPE";
     }
+
+    @JsonIgnore
+    public abstract Optional<Long> logical_flow_decorator_id();
+
     @Value.Default
+    @JsonIgnore
     public Long decorator_entity_id(){
         return 1L;
     }
@@ -118,6 +124,8 @@ public abstract class PhysicalFlowOverview {
         return source_entity_kind();
     }
     @Value.Default
+    @JsonIgnore
+    @Value.Auxiliary
     public Optional<Long> owning_entity_id(){
         return source_entity_id();
     }
