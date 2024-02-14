@@ -1,6 +1,6 @@
 # Application Data Loader
 
-![Appplication Loader Diagram](<src/Application Data Loader with UI.png>)
+![Application Loader Diagram](<src/Application Data Loader with UI.png>)
 
 # Mapping Details
 
