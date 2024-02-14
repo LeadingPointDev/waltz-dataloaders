@@ -1,0 +1,135 @@
+Table waltzloader."person-out.json" {
+  "employee_id" "character varying(128)"
+  "display_name" "character varying(255)" [not null]
+  "email" "character varying(255)" [not null]
+  "user_principal_name" "character varying(255)"
+  "department_name" "character varying(255)"
+  "kind" "character varying(255)" [not null]
+  "manager_employee_id" "character varying(128)"
+  "title" "character varying(255)"
+  "office_phone" "character varying(128)"
+  "mobile_phone" "character varying(128)"
+  "organisational_unit_id" bigint
+}
+
+
+
+Table waltz."person" {
+  "id" bigint [not null, increment]
+  "employee_id" "character varying(128)"
+  "display_name" "character varying(255)" [not null]
+  "email" "character varying(255)" [not null]
+  "user_principal_name" "character varying(255)"
+  "department_name" "character varying(255)"
+  "kind" "character varying(255)" [not null]
+  "manager_employee_id" "character varying(128)"
+  "title" "character varying(255)"
+  "office_phone" "character varying(128)"
+  "mobile_phone" "character varying(128)"
+  "organisational_unit_id" bigint
+  "is_removed" boolean [not null, default: false]
+
+Indexes {
+  id [pk, name: "person_pkey"]
+  employee_id [unique, name: "unique_employee_id"]
+}
+}
+
+
+Ref: "waltzloader"."person-out.json"."employee_id" < "waltz"."person"."employee_id"
+Ref: "waltzloader"."person-out.json"."display_name" < "waltz"."person"."display_name"
+Ref: "waltzloader"."person-out.json"."email" < "waltz"."person"."email"
+Ref: "waltzloader"."person-out.json"."user_principal_name" < "waltz"."person"."user_principal_name"
+Ref: "waltzloader"."person-out.json"."department_name" < "waltz"."person"."department_name"
+Ref: "waltzloader"."person-out.json"."kind" < "waltz"."person"."kind"
+Ref: "waltzloader"."person-out.json"."manager_employee_id" < "waltz"."person"."manager_employee_id"
+Ref: "waltzloader"."person-out.json"."title" < "waltz"."person"."title"
+Ref: "waltzloader"."person-out.json"."office_phone" < "waltz"."person"."office_phone"
+Ref: "waltzloader"."person-out.json"."mobile_phone" < "waltz"."person"."mobile_phone"
+Ref: "waltzloader"."person-out.json"."organisational_unit_id" < "waltz"."person"."organisational_unit_id"
+  
+Table waltz."person_hierarchy" {
+  "manager_id" "character varying(128)" [not null]
+  "employee_id" "character varying(128)" [not null]
+  "level" integer [not null, default: 99]
+
+Indexes {
+  (manager_id, employee_id) [pk, name: "reportee_pkey"]
+}
+}
+
+
+Ref: "waltz"."person"."manager_employee_id" <> "waltz"."person_hierarchy"."manager_id"
+Ref: "waltz"."person"."employee_id" <> "waltz"."person_hierarchy"."employee_id"
+
+
+Table waltz."organisational_unit" {
+  "id" bigint [not null]
+  "name" "character varying(255)"
+  "description" "character varying(4000)"
+  "parent_id" bigint
+  "created_at" timestamp [not null, default: `now()`]
+  "last_updated_at" timestamp [not null]
+  "external_id" "character varying(200)"
+  "created_by" "character varying(255)" [not null, default: `'waltz'::charactervarying`]
+  "last_updated_by" "character varying(255)" [not null, default: `'waltz'::charactervarying`]
+  "provenance" "character varying(64)" [not null, default: `'waltz'::charactervarying`]
+
+Indexes {
+  id [pk, name: "organisational_unit_pkey"]
+}
+}
+
+Table waltzUI."Person Summary" {
+  "(Name)" "character varying(255)"
+  "(Employee ID)" "character varying(128)"
+  "Title" "character varying(255)"
+  "(Kind)" "character varying(255)"
+  "e-mail" "character varying(255)"
+  "Tel (Office)" "character varying(128)"
+  "Tel (Mobile)" "character varying(128)"
+  "Organisational Unit" "character varying(255)"
+}
+
+Table waltzUI."Profile Summary" {
+  "Name" "character varying(255)"
+  "Email" "character varying(255)"
+  "Phone" "character varying(128)"
+  "Employee Id" "character varying(128)"
+  "Managers" "character varying(255)"
+  "Direct Reportees" "character varying(255)"
+}
+
+Table waltzUI."Person Hierarchy (Managers / Directs)" {
+  "(Name)" "character varying(255)"
+  "(Kind)" "character varying(255)"
+  "(Title)" "character varying(255)"
+  "(e-mail)" "character varying(255)"
+  "(Phone)" "character varying(128)"
+}
+
+
+
+Ref: "waltz"."organisational_unit"."name" < "waltzUI"."Person Summary"."Organisational Unit"
+Ref: "waltz"."person"."organisational_unit_id" < "waltz"."organisational_unit"."id"
+Ref: "waltz"."person"."display_name" < "waltzUI"."Person Summary"."(Name)"
+Ref: "waltz"."person"."email" < "waltzUI"."Person Summary"."e-mail"
+Ref: "waltz"."person"."title" < "waltzUI"."Person Summary"."Title"
+Ref: "waltz"."person"."office_phone" < "waltzUI"."Person Summary"."Tel (Office)"
+Ref: "waltz"."person"."mobile_phone" < "waltzUI"."Person Summary"."Tel (Mobile)"
+Ref: "waltz"."person"."kind" < "waltzUI"."Person Summary"."(Kind)"
+Ref: "waltz"."person"."employee_id" < "waltzUI"."Person Summary"."(Employee ID)"
+
+Ref: "waltz"."person"."kind" < "waltzUI"."Person Hierarchy (Managers / Directs)"."(Kind)"
+Ref: "waltz"."person"."display_name" < "waltzUI"."Person Hierarchy (Managers / Directs)"."(Name)"
+Ref: "waltz"."person"."title" < "waltzUI"."Person Hierarchy (Managers / Directs)"."(Title)"
+Ref: "waltz"."person"."email" < "waltzUI"."Person Hierarchy (Managers / Directs)"."(e-mail)"
+Ref: "waltz"."person"."office_phone" < "waltzUI"."Person Hierarchy (Managers / Directs)"."(Phone)"
+
+Ref: "waltz"."person"."email" < "waltzUI"."Profile Summary"."Email"
+Ref: "waltz"."person"."display_name" < "waltzUI"."Profile Summary"."Name"
+Ref: "waltz"."person"."office_phone" < "waltzUI"."Profile Summary"."Phone"
+Ref: "waltz"."person"."employee_id" < "waltzUI"."Profile Summary"."Employee Id"
+Ref: "waltz"."person"."display_name" < "waltzUI"."Profile Summary"."Managers"
+Ref: "waltz"."person"."display_name" < "waltzUI"."Profile Summary"."Direct Reportees"
+
