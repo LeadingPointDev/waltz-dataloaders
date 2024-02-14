@@ -12,7 +12,7 @@ The Waltz Data Loader is a Java application designed to load various types of da
 Run the Waltz Data Loader using the Java command-line interface. The loader accepts several command-line arguments to specify the type of data to load and the corresponding data file paths.
 
 ### Command Syntax
-java -jar waltz-loader.jar [options]
+java -jar waltz-util-loader.jar [options]
 
 
 ### Options
@@ -28,27 +28,27 @@ If running the data loader in a setup that does not have a concept of user.home,
 Set: external.config.path
 
 ```
-java -Dexternal.config.path=/different/path/to/waltz.properties -jar waltz-loader.jar -A /path/to/applications.json
+java -Dexternal.config.path=/different/path/to/waltz.properties -jar waltz-util-loader.jar -A /path/to/applications.json
 ```
 
 ### Examples
 1. Load applications:
 ```
-java -jar waltz-loader.jar -A /path/to/applications.json
+java -jar waltz-util-loader.jar -A /path/to/applications.json
 ```
 2. Load people:
 ```
-java -jar waltz-loader.jar -P /path/to/people.json
+java -jar waltz-util-loader.jar -P /path/to/people.json
 ```
 3. Load data types:
 ```
-java -jar waltz-loader.jar -D /path/to/data_types.json
+java -jar waltz-util-loader.jar -D /path/to/data_types.json
 ```
 4. Load organizational units:
 ```
-java -jar waltz-loader.jar -O /path/to/org_units.json
+java -jar waltz-util-loader.jar -O /path/to/org_units.json
 ```
 5. Load measurables (e.g., products):
 ```
-java -jar waltz-loader.jar -M PRODUCT /path/to/measurables.json
+java -jar waltz-util-loader.jar -M PRODUCT /path/to/measurables.json
 ```

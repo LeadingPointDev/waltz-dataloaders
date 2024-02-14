@@ -253,6 +253,7 @@
     </profiles>
 
     <build>
+        <finalName>waltz-util-loader</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
