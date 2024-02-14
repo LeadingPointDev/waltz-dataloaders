@@ -7,12 +7,12 @@
     <parent>
         <groupId>org.finos</groupId>
         <artifactId>waltz-util</artifactId>
-        <version>0.1-SNAPSHOT</version>
+        <version>1.04-SNAPSHOT</version>
     </parent>
 
     <groupId>org.finos</groupId>
     <artifactId>waltz-util-schema</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>1.04-SNAPSHOT</version>
 
 
     <build>
