@@ -7,12 +7,12 @@
     <parent>
         <groupId>org.finos</groupId>
         <artifactId>waltz-util</artifactId>
-        <version>0.1-SNAPSHOT</version>
+        <version>1.04-SNAPSHOT</version>
     </parent>
 
     <groupId>org.finos</groupId>
     <artifactId>waltz-util-loader</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>1.04-SNAPSHOT</version>
 
     <packaging>jar</packaging>
 
@@ -20,7 +20,7 @@
         <dependency>
             <groupId>org.finos</groupId>
             <artifactId>waltz-util-common</artifactId>
-            <version>0.1-SNAPSHOT</version>
+            <version>1.04-SNAPSHOT</version>
         </dependency>
 
         <dependency>

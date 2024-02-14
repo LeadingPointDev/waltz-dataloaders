@@ -31,7 +31,7 @@
 
     <groupId>org.finos</groupId>
     <artifactId>waltz-util</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>1.04-SNAPSHOT</version>
     <modules>
         <module>waltz-util-common</module>
         <module>waltz-util-schema</module>
@@ -45,7 +45,7 @@
     <url>https://waltz.finos.org/</url>
 
     <issueManagement>
-        <url>https://github.com/davidwatkins73/waltz-util/issues</url>
+        <url>https://github.com/LeadingPointDev/waltz-dataloaders/issues</url>
         <system>GitHub Issues</system>
     </issueManagement>
 
@@ -60,8 +60,8 @@
 
     <scm>
         <url>https://github.com/finos/waltz</url>
-        <connection>scm:git:git://github.com/davidwatkins73/waltz-util.git</connection>
-        <developerConnection>scm:git:git@github.com:davidwatkins73/waltz-util.git</developerConnection>
+        <connection>scm:git:git://github.com/LeadingPointDev/waltz-dataloaders.git</connection>
+        <developerConnection>scm:git:git@github.com:LeadingPointDev/waltz-dataloaders.git</developerConnection>
     </scm>
 
     <properties>
