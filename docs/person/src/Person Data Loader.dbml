@@ -9,9 +9,13 @@ Table waltzloader."person-out.json" {
   "title" "character varying(255)"
   "office_phone" "character varying(128)"
   "mobile_phone" "character varying(128)"
-  "organisational_unit_id" bigint
+  "organisational_unit_external_id" "character varying(200)"
 }
 
+
+
+
+Ref: "waltzloader"."person-out.json"."organisational_unit_external_id" > "waltz"."organisational_unit"."external_id"
 
 
 Table waltz."person" {
@@ -46,8 +50,8 @@ Ref: "waltzloader"."person-out.json"."manager_employee_id" < "waltz"."person"."m
 Ref: "waltzloader"."person-out.json"."title" < "waltz"."person"."title"
 Ref: "waltzloader"."person-out.json"."office_phone" < "waltz"."person"."office_phone"
 Ref: "waltzloader"."person-out.json"."mobile_phone" < "waltz"."person"."mobile_phone"
-Ref: "waltzloader"."person-out.json"."organisational_unit_id" < "waltz"."person"."organisational_unit_id"
-  
+
+
 Table waltz."person_hierarchy" {
   "manager_id" "character varying(128)" [not null]
   "employee_id" "character varying(128)" [not null]
@@ -109,7 +113,7 @@ Table waltzUI."Person Hierarchy (Managers / Directs)" {
 }
 
 
-
+// Mappings
 Ref: "waltz"."organisational_unit"."name" < "waltzUI"."Person Summary"."Organisational Unit"
 Ref: "waltz"."person"."organisational_unit_id" < "waltz"."organisational_unit"."id"
 Ref: "waltz"."person"."display_name" < "waltzUI"."Person Summary"."(Name)"
@@ -118,13 +122,11 @@ Ref: "waltz"."person"."title" < "waltzUI"."Person Summary"."Title"
 Ref: "waltz"."person"."office_phone" < "waltzUI"."Person Summary"."Tel (Office)"
 Ref: "waltz"."person"."mobile_phone" < "waltzUI"."Person Summary"."Tel (Mobile)"
 Ref: "waltz"."person"."kind" < "waltzUI"."Person Summary"."(Kind)"
-Ref: "waltz"."person"."employee_id" < "waltzUI"."Person Summary"."(Employee ID)"
-
 Ref: "waltz"."person"."kind" < "waltzUI"."Person Hierarchy (Managers / Directs)"."(Kind)"
 Ref: "waltz"."person"."display_name" < "waltzUI"."Person Hierarchy (Managers / Directs)"."(Name)"
 Ref: "waltz"."person"."title" < "waltzUI"."Person Hierarchy (Managers / Directs)"."(Title)"
 Ref: "waltz"."person"."email" < "waltzUI"."Person Hierarchy (Managers / Directs)"."(e-mail)"
-Ref: "waltz"."person"."office_phone" < "waltzUI"."Person Hierarchy (Managers / Directs)"."(Phone)"
+Ref: "waltz"."person"."employee_id" < "waltzUI"."Person Summary"."(Employee ID)"
 
 Ref: "waltz"."person"."email" < "waltzUI"."Profile Summary"."Email"
 Ref: "waltz"."person"."display_name" < "waltzUI"."Profile Summary"."Name"
@@ -133,3 +135,5 @@ Ref: "waltz"."person"."employee_id" < "waltzUI"."Profile Summary"."Employee Id"
 Ref: "waltz"."person"."display_name" < "waltzUI"."Profile Summary"."Managers"
 Ref: "waltz"."person"."display_name" < "waltzUI"."Profile Summary"."Direct Reportees"
 
+
+Ref: "waltz"."person"."office_phone" < "waltzUI"."Person Hierarchy (Managers / Directs)"."(Phone)"
