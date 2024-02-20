@@ -1,4 +1,4 @@
-# Waltz Data Loader README
+# Waltz Data Loader
 
 ## Overview
 The Waltz Data Loader is a Java application designed to load various types of data (applications, people, data types, organizational units, and measurables) into the Waltz system. This tool is useful for batch processing and automating the integration of large datasets.
