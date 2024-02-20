@@ -15,9 +15,4 @@ buildNumber.properties
 .project
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
-/.idea/.gitignore
-/.idea/compiler.xml
-/.idea/encodings.xml
-/.idea/jarRepositories.xml
-/.idea/misc.xml
-/.idea/vcs.xml
+.idea/*
