@@ -16,13 +16,13 @@ java -jar waltz-util-loader.jar [options]
 
 
 ### Options
-- `-A <path>`: Load applications data from the specified file.
-- `-P <path>`: Load people data from the specified file.
-- `-D <path>`: Load data types from the specified file.
-- `-O <path>`: Load organizational units data from the specified file.
-- `-M <category> <path>`: Load measurables data. The category can be PRODUCT, CAPABILITY, or BOUNDED_CONTEXT.
+- `-APPLICATION <path>`: Load applications data from the specified file.
+- `-PERSON <path>`: Load people data from the specified file.
+- `-DATATYPE <path>`: Load data types from the specified file.
+- `-ORGANISATIONALUNIT <path>`: Load organizational units data from the specified file.
+- `-MEASURABLE <category> <path>`: Load measurables data. The category can be PRODUCT, CAPABILITY, or BOUNDED_CONTEXT.
 
-### (Optional) Specifiy Properties file path
+### (Optional) Specify Properties file path
 If running the data loader in a setup that does not have a concept of user.home, you can alternatively specify the full location of a properties file.
 
 Set: external.config.path

@@ -12,24 +12,32 @@ public class Main {
             switch (args[i]) {
 
                 case "-A":
+                case "-APPLICATION":
+                case "-application":
                     System.out.println("Loading applications");
                     ApplicationLoader al = new ApplicationLoader(args[i + 1]);
                     al.synch();
                     i = i + 1;
                     break;
                 case "-P":
+                case "-PERSON":
+                case "-person":
                     System.out.println("Loading people");
                     PersonLoader pl = new PersonLoader(args[i + 1]);
                     pl.synch();
                     i = i + 1;
                     break;
                 case "-D":
+                case "-DATATYPE":
+                case "-datatype":
                     System.out.println("Loading data types");
                     DataTypeLoader dtl = new DataTypeLoader(args[i + 1]);
                     dtl.synch();
                     i = i + 2;
                     break;
                 case "-O":
+                case "-ORGANISATIONALUNIT":
+                case "-organisationalunit":
                     System.out.println("Loading org units");
 
                     OrgUnitLoader ol = new OrgUnitLoader(args[i + 1]);
@@ -37,6 +45,8 @@ public class Main {
                     i = i + 2;
                     break;
                 case "-M":
+                case "-MEASURABLE":
+                case "-measurable":
                     // for measurables need to specify what category
                     // args will look like
                     // java -jar loader.jar -M PRODUCT <path to Excel file> <path to config file>
@@ -63,29 +73,28 @@ public class Main {
                     ml.synch();
                     i = i + 1;
                     break;
-                case "-L":
+                case "-LF":
+                case "-LOGICALFLOW":
+                case "-logicalflow":
                     System.out.println("Loading logical flows");
                     LogicalFlowLoader lfl = new LogicalFlowLoader(args[i + 1]);
                     lfl.synch();
                     i = i + 1;
                     break;
-                case "-Physical_Flow":
+                case "-PF":
+                case "-PHYSICALFLOW":
+                case "-physicalflow":
                     System.out.println("Loading physical flows");
                     PhysicalFlowLoader pfl = new PhysicalFlowLoader(args[i + 1]);
                     pfl.synch();
                     i = i + 1;
                     break;
-
-
-
                 default:
                     System.out.println(args[i]);
                     break;
 
             }
         }
-
-
     }
 
 }
