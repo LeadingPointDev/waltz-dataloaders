@@ -42,10 +42,7 @@ public abstract class ApplicationOverview {
     }
 
     @Value.Default
-    public String lifecycle_phase() {
-        return "ACTIVE";
-
-    }
+    public String lifecycle_phase() { return "CONCEPTUAL"; }
 
     @Value.Default
     public String overall_rating() {
