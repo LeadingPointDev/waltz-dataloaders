@@ -1,0 +1,58 @@
+[
+    {
+		"external_id": "LF-001",
+		"source_entity_kind": "APPLICATION",
+		"source_entity_name": "Application002",
+		"target_entity_kind": "APPLICATION",
+		"target_entity_name": "Application001",
+		"decorator_entity_kind": "DATA_TYPE",
+		"decorator_entity_name": "Book Data",
+		"entity_lifecycle_status": "ACTIVE",
+		"rating": "NO_OPINION",
+		"flow_classification_rule_id": null,
+		"provenance": "dataflows",
+		"loaded_by": "admin"
+    },
+    {
+		"external_id": "LF-001",
+		"source_entity_kind": "APPLICATION",
+		"source_entity_name": "Application002",
+		"target_entity_kind": "APPLICATION",
+		"target_entity_name": "Application001",
+		"decorator_entity_kind": "DATA_TYPE",
+		"decorator_entity_name": "Counterparty etc.",
+		"entity_lifecycle_status": "ACTIVE",
+		"rating": "NO_OPINION",
+		"flow_classification_rule_id": null,
+		"provenance": "dataflows",
+		"loaded_by": "admin"
+    },
+    {
+		"external_id": "LF-001",
+		"source_entity_kind": "APPLICATION",
+		"source_entity_name": "Application002",
+		"target_entity_kind": "APPLICATION",
+		"target_entity_name": "Application001",
+		"decorator_entity_kind": "DATA_TYPE",
+		"decorator_entity_name": "Pricing Data",
+		"entity_lifecycle_status": "ACTIVE",
+		"rating": "NO_OPINION",
+		"flow_classification_rule_id": null,
+		"provenance": "dataflows",
+		"loaded_by": "admin"
+    },
+    {
+		"external_id": "LF-002",
+		"source_entity_kind": "APPLICATION",
+		"source_entity_name": "Application002",
+		"target_entity_kind": "APPLICATION",
+		"target_entity_name": "Application001",
+		"decorator_entity_kind": "DATA_TYPE",
+		"decorator_entity_name": "Virtual Currencies",
+		"entity_lifecycle_status": "ACTIVE",
+		"rating": "NO_OPINION",
+		"flow_classification_rule_id": null,
+		"provenance": "dataflows",
+		"loaded_by": "admin"
+    }
+]

@@ -14,15 +14,14 @@ Run the Waltz Data Loader using the Java command-line interface. The loader acce
 ### Command Syntax
 java -jar waltz-util-loader.jar [options]
 
-
 ### Options
-- `-A <path>`: Load applications data from the specified file.
-- `-P <path>`: Load people data from the specified file.
-- `-D <path>`: Load data types from the specified file.
-- `-O <path>`: Load organizational units data from the specified file.
-- `-M <category> <path>`: Load measurables data. The category can be PRODUCT, CAPABILITY, or BOUNDED_CONTEXT.
+- `-APPLICATION <path>`: Load applications data from the specified file.
+- `-PERSON <path>`: Load people data from the specified file.
+- `-DATATYPE <path>`: Load data types from the specified file.
+- `-ORGANISATIONALUNIT <path>`: Load organizational units data from the specified file.
+- `-MEASURABLE <category> <path>`: Load measurables data. The category can be PRODUCT, CAPABILITY, or BOUNDED_CONTEXT.
 
-### (Optional) Specifiy Properties file path
+### (Optional) Specify Properties file path
 If running the data loader in a setup that does not have a concept of user.home, you can alternatively specify the full location of a properties file.
 
 Set: external.config.path
@@ -32,23 +31,23 @@ java -Dexternal.config.path=/different/path/to/waltz.properties -jar waltz-util-
 ```
 
 ### Examples
-1. Load applications:
+1. Load Applications:
 ```
-java -jar waltz-util-loader.jar -A /path/to/applications.json
+java -jar waltz-util-loader.jar -APPLICATION /path/to/applications.json
 ```
-2. Load people:
+2. Load People:
 ```
-java -jar waltz-util-loader.jar -P /path/to/people.json
+java -jar waltz-util-loader.jar -PERSON /path/to/people.json
 ```
-3. Load data types:
+3. Load Data Types:
 ```
-java -jar waltz-util-loader.jar -D /path/to/data_types.json
+java -jar waltz-util-loader.jar -DATATYPE /path/to/data_types.json
 ```
-4. Load organizational units:
+4. Load Organizational Units:
 ```
-java -jar waltz-util-loader.jar -O /path/to/org_units.json
+java -jar waltz-util-loader.jar -ORGANISATIONALUNIT /path/to/org_units.json
 ```
-5. Load measurables (e.g., products):
+5. Load Measurables (e.g. Product, Capability, Bounded Context):
 ```
-java -jar waltz-util-loader.jar -M PRODUCT /path/to/measurables.json
+java -jar waltz-util-loader.jar -MEASURABLE PRODUCT /path/to/measurables.json
 ```
