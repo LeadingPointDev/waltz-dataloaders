@@ -52,6 +52,7 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
         Map<String, Long> externalIdtoId = getExternalIdToIdMap(dsl);
         Map<String, Long> orgIdByOrgExtId = getOrgUnitRelations(dsl);
 
+        rawApps.add(createOrphanApplication());
 
         return rawApps
                 .stream()
@@ -68,6 +69,18 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
                         }
                 )
                 .collect(Collectors.toSet());
+    }
+
+    private ApplicationOverview createOrphanApplication() {
+        return ImmutableApplicationOverview
+                .builder()
+                .id(-1L)
+                .name("Unknown Application")
+                .description("This Application can be used as a placeholder for entity linking that has not yet been determined.")
+                .provenance("waltz-loader")
+                .asset_code("UNKNOWN")
+                .organisational_unit_external_id("ORPHAN")
+                .build();
     }
 
 
