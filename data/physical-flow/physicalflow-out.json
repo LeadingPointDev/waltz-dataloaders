@@ -1,0 +1,38 @@
+[
+    {
+		"owning_entity_kind": "APPLICATION",
+		"owning_entity_name": "Application001",
+		"specification_name": "Flow Specification Name 001",
+		"specification_description": "Flow Specification Description 001",
+		"specification_external_id": "physicalflowspec001",
+		"format": "DATABASE",
+		"physical_flow_name": null,
+		"physical_flow_description": "Flow Description 001",
+		"physical_flow_external_id": "physicalflow001",
+		"basis_offset": 0,
+		"frequency": "INTRA_DAY",
+		"transport": "MANUAL",
+		"logical_flow_external_id": "logicalflow001",
+		"data_type_name": "Book Data",
+		"provenance": "physicalflowload",
+		"loaded_by": "admin"
+    },
+    {
+		"owning_entity_kind": "APPLICATION",
+		"owning_entity_name": "Application001",
+		"specification_name": "Flow Specification Name 002",
+		"specification_description": "Flow Specification Description 002",
+		"specification_external_id": "physicalflowspec002",
+		"format": "FLAT_FILE",
+		"physical_flow_name": null,
+		"physical_flow_description": "Flow Description 002",
+		"physical_flow_external_id": "physicalflow002",
+		"basis_offset": 0,
+		"frequency": "WEEKLY",
+		"transport": "FILE_SHARE",
+		"logical_flow_external_id": "logicalflow002",
+		"data_type_name": "Counterparty etc.",
+		"provenance": "physicalflowload",
+		"loaded_by": "admin"
+    }
+]
