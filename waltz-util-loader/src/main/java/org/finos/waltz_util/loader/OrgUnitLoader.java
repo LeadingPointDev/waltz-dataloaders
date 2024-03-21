@@ -35,8 +35,13 @@ public class OrgUnitLoader extends Loader<OrgUnitOverview>{
         );
     }
 
-    private Long getMaxId(Set<OrgUnitOverview> existingOverviews){
-        return existingOverviews.stream().map(OrgUnitOverview::id).max(Long::compareTo).orElse(0L);
+    private Long getMaxId(DSLContext tx){
+        Long maxId = tx
+                .select(ORGANISATIONAL_UNIT.ID.max())
+                .from(ORGANISATIONAL_UNIT)
+                .fetchOne()
+                .value1();
+        return maxId == null ? 0L : maxId;
     }
 
     protected void validate(Set<OrgUnitOverview> overviews) {
@@ -147,9 +152,10 @@ public class OrgUnitLoader extends Loader<OrgUnitOverview>{
                 .from(ORGANISATIONAL_UNIT)
                 .fetch()
                 .stream()
+                .filter(r -> r.get(ORGANISATIONAL_UNIT.EXTERNAL_ID) != null) // do not process un-identified orgs (at all)
                 .map(o -> toOverview(o))
                 .collect(Collectors.toSet());
-        this.maxId = getMaxId(existingOUs);
+        this.maxId = getMaxId(dsl);
         return existingOUs;
 
     }
@@ -188,16 +194,12 @@ public class OrgUnitLoader extends Loader<OrgUnitOverview>{
         OrganisationalUnitRecord record = r.into(ORGANISATIONAL_UNIT);
         return ImmutableOrgUnitOverview.builder()
                 .name(record.getName())
-                .description(record.getDescription())
+                .description(Optional.ofNullable(record.getDescription()))
                 .id(record.getId())
                 .parent_id(Optional.ofNullable(record.getParentId()))
                 .external_id(record.getExternalId())
-                // do we need to have the created at/updated at fields, I think not?
-//                .createdAt(record.getCreatedAt())
-//                .lastUpdatedAt(record.getLastUpdatedAt())
-//                .createdBy(record.getCreatedBy())
-//                .lastUpdatedBy(record.getLastUpdatedBy())
-                //
+                .created_at(record.getCreatedAt())
+                .last_updated_at(record.getLastUpdatedAt())
                 .provenance(record.getProvenance())
                 .build();
 
@@ -212,7 +214,7 @@ public class OrgUnitLoader extends Loader<OrgUnitOverview>{
         record.setParentId(o.parent_id().orElse(null));
         record.setExternalId(o.external_id());
         record.setCreatedAt(o.created_at().orElse(new Timestamp(System.currentTimeMillis())));
-        record.setLastUpdatedAt(new Timestamp(System.currentTimeMillis()));
+        record.setLastUpdatedAt(o.last_updated_at());
         record.setCreatedBy(o.created_by());
         record.setLastUpdatedBy(o.last_updated_by());
         record.setProvenance(o.provenance());
@@ -223,7 +225,14 @@ public class OrgUnitLoader extends Loader<OrgUnitOverview>{
     public Map<String, Long> externalIDtoIDMap(DSLContext dsl, OrgUnitOverview[] rawOverviews ) throws IOException {
         Map<String, Long> internalMap = dsl.select(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID)
                 .from(ORGANISATIONAL_UNIT)
-                .fetchMap(ORGANISATIONAL_UNIT.EXTERNAL_ID, ORGANISATIONAL_UNIT.ID);
+                .stream()
+                .collect(
+                        Collectors.toMap(
+                                r -> r.get(ORGANISATIONAL_UNIT.EXTERNAL_ID),
+                                r -> r.get(ORGANISATIONAL_UNIT.ID),
+                                (a, b) -> a
+                        )
+                );
 
         Map<String, Long> externalMap = Stream
                 .of(rawOverviews)
