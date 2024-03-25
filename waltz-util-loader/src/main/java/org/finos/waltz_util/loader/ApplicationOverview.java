@@ -81,8 +81,11 @@ public abstract class ApplicationOverview {
 
 
     @JsonIgnore
-
-    public abstract Timestamp created_at();
+    @Value.Default
+    @Value.Auxiliary
+    public Timestamp created_at() {
+        return new Timestamp(System.currentTimeMillis());
+    }
 
     @JsonIgnore
     @Value.Default

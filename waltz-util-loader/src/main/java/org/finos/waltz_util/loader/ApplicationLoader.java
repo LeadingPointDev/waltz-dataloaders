@@ -180,18 +180,21 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
 
     protected Set<ApplicationOverview> getExistingRecordsAsOverviews(DSLContext tx) {
         // todo: Fix bug with failing to fetch applications if ORGID is missing
+
+
+        // select applications and join in ORG_UNIT_EXTERNAL_ID
         Set<ApplicationOverview> existingApplications = tx
                 .select(APPLICATION.fields())
-                .select(coalesce(ORGANISATIONAL_UNIT.EXTERNAL_ID,"ORPHAN").as("ORG_EXTERNAL_ID"),
-                        coalesce(ORGANISATIONAL_UNIT.ID,-1L).as("ORG_ID"),
-                        coalesce(ORGANISATIONAL_UNIT.NAME,"Orphan Organisation").as("ORG_NAME"))
+                .select(ORGANISATIONAL_UNIT.EXTERNAL_ID)
                 .from(APPLICATION)
                 .leftJoin(ORGANISATIONAL_UNIT)
-                .on(ORGANISATIONAL_UNIT.ID.eq(APPLICATION.ORGANISATIONAL_UNIT_ID))
+                .on(APPLICATION.ORGANISATIONAL_UNIT_ID.eq(ORGANISATIONAL_UNIT.ID))
+                .where(ORGANISATIONAL_UNIT.EXTERNAL_ID.isNotNull())
                 .fetch()
                 .stream()
                 .map(r -> toOverview(r))
                 .collect(Collectors.toSet());
+
 
         return existingApplications;
 
@@ -212,7 +215,7 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
                 .builder()
                 .id(app.getId().longValue())
                 .asset_code(app.getAssetCode())
-                .organisational_unit_external_id((String) r.get("ORG_EXTERNAL_ID"))
+                .organisational_unit_external_id(r.get(ORGANISATIONAL_UNIT.EXTERNAL_ID))
                 .organisational_unit_id(app.getOrganisationalUnitId())
                 .name(app.getName())
                 .description(app.getDescription())
@@ -244,7 +247,7 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
         record.setAssetCode(app.asset_code());
         record.setCreatedAt(app.created_at());
         record.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
-        record.setOrganisationalUnitId(app.organisational_unit_id().orElseThrow(() -> new IllegalArgumentException("No org unit id")));
+        record.setOrganisationalUnitId(app.organisational_unit_id().orElse(-1L));
         record.setKind(app.kind().name());
         record.setLifecyclePhase(app.lifecycle_phase());
         record.setParentAssetCode(app.parent_asset_code().orElse(null));
