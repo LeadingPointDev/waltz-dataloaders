@@ -112,6 +112,7 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
                 .map(a -> {
                     ApplicationRecord record = toJooqRecord(tx, a);
                     record.changed(APPLICATION.ID, false);
+
                     return record;
                 })
                 .collect(Collectors.toList());
@@ -226,6 +227,10 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
                 .planned_retirement_date(Optional.ofNullable(app.getPlannedRetirementDate()))
                 .actual_retirement_date(Optional.ofNullable(app.getActualRetirementDate()))
                 .commission_date(Optional.ofNullable(app.getCommissionDate()))
+
+                .created_at(app.getCreatedAt())
+                .updated_at(app.getUpdatedAt())
+
                 .build();
     }
 
@@ -237,7 +242,7 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
         record.setName(app.name());
         record.setDescription(app.description().orElse(null));
         record.setAssetCode(app.asset_code());
-        record.setCreatedAt(app.commission_date().orElse(Timestamp.valueOf(LocalDateTime.now())));
+        record.setCreatedAt(app.created_at());
         record.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
         record.setOrganisationalUnitId(app.organisational_unit_id().orElseThrow(() -> new IllegalArgumentException("No org unit id")));
         record.setKind(app.kind().name());
@@ -247,6 +252,8 @@ public class ApplicationLoader extends Loader<ApplicationOverview> {
         record.setProvenance(app.provenance());
         record.setBusinessCriticality(app.business_criticality().name());
         record.setIsRemoved(app.isRemoved().orElse(false));
+
+
         return record;
 
 

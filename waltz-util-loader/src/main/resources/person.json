@@ -8,7 +8,7 @@
     "manager_email" : "james@test.com",
     "office_phone" : "123-456-7890",
     "mobile_phone" : "123-456-7890",
-    "organisational_unit_id" : "ORG-001"
+    "organisational_unit_external_id": "ORG-001"
   },
   {
     "name": "James",
@@ -19,7 +19,7 @@
     "manager_email" : "bobby@test.com",
     "office_phone" : "123-456-7890",
     "mobile_phone" : "123-456-7890",
-    "organisational_unit_id" : "ORG-001"
+    "organisational_unit_external_id": "ORG-001"
   },
   {
     "name" : "Boss Bobby",
@@ -30,7 +30,7 @@
     "manager_email" : "bobby@newemail",
     "office_phone" : "123-456-7890",
     "mobile_phone" : "123-456-7890",
-    "organisational_unit_id" : "ORG-001"
+    "organisational_unit_external_id": "ORG-001"
   }
 
 

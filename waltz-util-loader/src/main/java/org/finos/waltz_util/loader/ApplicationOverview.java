@@ -79,4 +79,17 @@ public abstract class ApplicationOverview {
     @JsonIgnore
     public abstract Optional<Long> organisational_unit_id();
 
+
+    @JsonIgnore
+
+    public abstract Timestamp created_at();
+
+    @JsonIgnore
+    @Value.Default
+    @Value.Auxiliary
+    public Timestamp updated_at() {
+        return new Timestamp(System.currentTimeMillis());
+    }
+
+
 }

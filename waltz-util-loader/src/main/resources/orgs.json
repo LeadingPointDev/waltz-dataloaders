@@ -2,25 +2,25 @@
   {
     "name" : "Main Bank",
     "description" : "This is the main bank Org",
-    "external_id" : "ORG-001"
+    "asset_code": "TST-001"
   },
   {
     "name" : "Lesser Bank",
     "description" : "This is the underlying of the main bank",
-    "external_id" : "ORG-002",
-    "parent_external_id": "ORG-001"
+    "asset_code": "TST-002",
+    "parent_external_id": "TST-001"
   },
   {
     "name": "Big Bank 2",
     "description": "This is a second big bank",
-    "external_id" : "ORG-003",
-    "parent_external_id": "ORG-001"
+    "asset_code": "TST-003",
+    "parent_external_id": "TST-001"
   },
   {
     "name" : "Small Bank",
-    "description" : "This is a small bank",
-    "external_id" : "ORG-004",
-    "parent_external_id": "ORG-003"
+    "description" : "This is a small bank with updated description",
+    "asset_code": "TST-004",
+    "parent_external_id": "TST-003"
   }
 
 
